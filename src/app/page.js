@@ -1,16 +1,20 @@
-// pages/index.js
+"use client";
 
-import Inicio from "./components/Inicio";
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { Home } from './home/page';
 
+export default function Index() {
+  const router = useRouter();
+  
+  useEffect(() => {
+    router.push('/home');
+  }, [router]);
 
-
-export default function Home() {
   return (
-    <div className=''>
-   
- 
+    <div>
       <main>
-        <Inicio />
+        <Home />
       </main>
     </div>
   );

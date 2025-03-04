@@ -2,6 +2,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import Footer from "./components/Footer";
 import NavBar from "./components/Navbar";
+import Header from "./components/Header"; // Importando o componente Header
 import Head from "next/head";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -23,27 +24,38 @@ export default function RootLayout({ children }) {
           </Head>
 
           {/* Logo no canto superior esquerdo */}
-          <div className="pt-6 pl-6 z-10">
-            <img src="/assets/mwmLogo.png" alt="Logo" className="w-24 h-auto" /> {/* Tamanho ajustável da logo */}
+          <div className="absolute top-6 left-6 z-10">
+            <img src="/assets/mwmLogo.png" alt="Logo" className="w-24 h-auto" />
           </div>
 
-          {/* Logo central */}
-          <div className="absolute inset-0 flex items-center justify-center z-0">
-            <img src="/assets/mwmLogo.png" alt="Logo Central" className="w-96 h-auto" /> {/* Tamanho maior para a logo central */}
+          {/* Header na parte superior */}
+          <div className="z-20 relative">
+            <Header />
           </div>
 
-          {/* NavBar com z-index maior para estar clicável */}
-          <div className="z-10 relative">
+          {/* NavBar abaixo do Header */}
+          <div className="z-20 relative">
             <NavBar />
+          </div>
+
+          {/* Logo central com opacidade reduzida */}
+          <div className="absolute inset-0 flex items-center justify-center z-0">
+            <img 
+              src="/assets/mwmLogo.png" 
+              alt="Logo Central" 
+              className="w-96 h-auto opacity-20" 
+            /> 
           </div>
 
           {/* Conteúdo principal */}
           <main className="flex-grow z-10 relative">
-            {children} {/* Conteúdo principal das páginas */}
+            {children}
           </main>
 
-          {/* Footer, se necessário */}
-          {/* <Footer /> Rodapé aparecerá em todas as páginas */}
+          {/* Footer */}
+          <div className="z-10 relative">
+            <Footer />
+          </div>
         </div>
       </body>
     </html>
