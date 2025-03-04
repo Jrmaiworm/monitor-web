@@ -179,7 +179,7 @@ const ComoFunciona = () => {
           </div>
         </div>
 
-        {/* CTA Final */}
+        {/* CTA Final  */}
         <div className="bg-blue-50 border border-blue-100 rounded-lg p-8 text-center">
           <h2 className="text-2xl font-bold text-blue-800 mb-4">
             Comece a monitorar seu site agora mesmo!
