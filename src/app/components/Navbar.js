@@ -62,15 +62,16 @@ const NavBar = () => {
           
           {/* Links de navegação (desktop) */}
           <div className="hidden md:flex md:items-center md:space-x-1">
-            <NavDesktopItem 
+           
+            
+            {!usuario?.token && (
+              <>
+                 <NavDesktopItem 
               href="/home" 
               label="HOME" 
               icon={<FaHome />} 
               active={isActive('/home')} 
             />
-            
-            {!usuario?.token && (
-              <>
                 <NavDesktopItem 
                   href="/como-funciona" 
                   label="COMO FUNCIONA" 
