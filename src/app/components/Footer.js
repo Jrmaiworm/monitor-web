@@ -23,7 +23,7 @@ const Footer = () => {
           <div className="flex flex-col items-center justify-center text-center">
             <div className="flex items-center space-x-2">
               <FaCode className="text-blue-200" />
-              <p className="font-medium">Versão 1.0.0</p>
+              <p className="font-medium">Versão 1.0.1</p>
             </div>
             <p className="text-xs text-blue-200 mt-1">eYe Monitor - Sistema de Monitoramento</p>
           </div>
