@@ -55,6 +55,7 @@ const Header = () => {
     
     try {
       router.push('/home');
+      window.reload()
     } catch (error) {
       window.location.href = '/home';
     }

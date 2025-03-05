@@ -8,6 +8,7 @@ import {
   FaChartBar, FaHistory, FaExternalLinkAlt, FaChartLine
 } from "react-icons/fa";
 import ModalPopup from "../components/ModalPopup";
+import api from "@/api/api";
 
 const MonitoramentoDetalhado = () => {
   const [usuario, setUsuario] = useState(null);
@@ -39,16 +40,13 @@ const MonitoramentoDetalhado = () => {
   const fetchUrls = async (userId) => {
     setIsLoading(true);
     try {
-      const response = await fetch(
-        `https://biomob-api.com:3202/dominio?userId=${userId}`
+      const response = await api.get(
+        `/dominio?userId=${userId}`
       );
-      if (!response.ok) {
-        throw new Error("Erro ao buscar URLs monitoradas");
-      }
-      const data = await response.json();
-      setUrls(data);
+   
+      setUrls(response.data);
 
-      const intervalosIniciais = data.reduce((acc, monitor) => {
+      const intervalosIniciais = response.data.reduce((acc, monitor) => {
         acc[monitor.id] = monitor.intervalo || 1;
         return acc;
       }, {});
@@ -63,24 +61,21 @@ const MonitoramentoDetalhado = () => {
   const fetchDetalhesMonitoramento = async (monitor) => {
     try {
       setMensagem("Carregando detalhes...");
-      const response = await fetch(
-        `https://biomob-api.com:3202/monitor-results?url=${monitor.url}&userId=${monitor.user_id}`
+      const response = await api.get(
+        `/monitor-results?url=${monitor.url}&userId=${monitor.user_id}`
       );
-      if (!response.ok) {
-        throw new Error("Erro ao buscar detalhes do monitoramento");
-      }
-      const data = await response.json();
-      setDetalhesMonitoramento(data);
+     
+      setDetalhesMonitoramento(response.data);
       setUrlSelecionada(monitor.url);
 
       // Calcula o histórico de momentos offline
-      const historico = data.filter((detalhe) => detalhe.status === "offline");
+      const historico = response.data.filter((detalhe) => detalhe.status === "offline");
       setHistoricoOffline(historico);
 
       // Calcula a porcentagem de tempo online e offline
-      const total = data.length;
+      const total = response.data.length;
       if (total > 0) {
-        const onlineCount = data.filter((detalhe) => detalhe.status === "online").length;
+        const onlineCount = response.data.filter((detalhe) => detalhe.status === "online").length;
         const offlineCount = total - onlineCount;
 
         setPorcentagemOnline(((onlineCount / total) * 100).toFixed(2));
@@ -143,11 +138,9 @@ const MonitoramentoDetalhado = () => {
   const handleDeleteUrl = async (id) => {
     try {
       setMensagem("Excluindo URL...");
-      const response = await fetch(`https://biomob-api.com:3202/dominio/${id}`, {
-        method: "DELETE",
-      });
+      const response = await api.delete(`/dominio/${id}`); // Usando o método delete do axios
 
-      if (!response.ok) {
+      if (response.status !== 200) {
         throw new Error("Erro ao deletar a URL");
       }
 
@@ -160,44 +153,38 @@ const MonitoramentoDetalhado = () => {
     }
   };
 
-  const handleIntervalChange = (id, value) => {
-    setIntervalos((prev) => ({
-      ...prev,
-      [id]: value,
-    }));
-  };
+const handleIntervalChange = (id, value) => {
+  setIntervalos((prev) => ({
+    ...prev,
+    [id]: value,
+  }));
+};
 
-  const handleMonitoramento = async (monitor, action) => {
-    try {
-      setMensagem(`${action === "start" ? "Iniciando" : "Parando"} monitoramento...`);
-      const response = await fetch("https://biomob-api.com:3202/monitor-start", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          url: monitor.url,
-          timeInMinutes: intervalos[monitor.id],
-          userId: usuario.id,
-          action: action,
-        }),
-      });
+const handleMonitoramento = async (monitor, action) => {
+  try {
+    setMensagem(`${action === "start" ? "Iniciando" : "Parando"} monitoramento...`);
+    
+    const response = await api.post("/monitor-start", {
+      url: monitor.url,
+      timeInMinutes: intervalos[monitor.id],
+      userId: usuario.id,
+      action: action,
+    }); // Usando o método post do axios
 
-      if (!response.ok) {
-        throw new Error(
-          `Erro ao ${action === "start" ? "iniciar" : "parar"} o monitoramento`
-        );
-      }
-
-      setMensagem(
-        `Monitoramento ${action === "start" ? "iniciado" : "parado"} com sucesso!`
+    if (response.status !== 200) {
+      throw new Error(
+        `Erro ao ${action === "start" ? "iniciar" : "parar"} o monitoramento`
       );
-      fetchUrls(usuario.id);
-    } catch (error) {
-      setMensagem(`Erro ao ${action === "start" ? "iniciar" : "parar"} o monitoramento.`);
     }
-  };
 
+    setMensagem(
+      `Monitoramento ${action === "start" ? "iniciado" : "parado"} com sucesso!`
+    );
+    fetchUrls(usuario.id);
+  } catch (error) {
+    setMensagem(`Erro ao ${action === "start" ? "iniciar" : "parar"} o monitoramento.`);
+  }
+};
   const fecharModal = () => {
     setDetalhesVisiveis(false);
     setDetalhesMonitoramento([]);

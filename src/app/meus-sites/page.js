@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { FaServer, FaBell, FaChartLine, FaCheck, FaTimes, FaClock, FaExclamationTriangle, FaShieldAlt, FaGlobe, FaUserClock, FaInfoCircle, FaEnvelope } from 'react-icons/fa';
+import api from '@/api/api';
 const URL ="https://biomob-api.com:3202/monitor-status/"
  const MeusSites = () => {
   const [usuario, setUsuario] = useState(null);
@@ -24,27 +25,21 @@ const URL ="https://biomob-api.com:3202/monitor-status/"
     
   }, [usuario]);
 
-async function getSites(){
-  
+  async function getSites() {
     try {
-        const response = await fetch(
-            `${URL}${usuario?.id}`
-          );
-          console.log('responsess', response)
-
-          if (!response.ok) {
-            throw new Error(`Erro: ${response.status} - ${response.statusText}`);
-          }
+      const response = await api.get(`${URL}${usuario?.id}`);
       
-          // Converte o response para JSON
-          const data = await response.json();
-          setMeusSites(data)
+      // Já acessa os dados da resposta
+      const data = response.data;
+  
+      // Atualiza o estado com os dados recebidos
+      setMeusSites(data);
     } catch (error) {
-        console.log('erro:', error)
+      console.log('erro:', error);
     }
-
-};
- console.log('siusertes', usuario)
+  };
+  
+ console.log('meussites', meusSites)
 
   // Função para exibir o status do site com a cor adequada
   const renderStatus = (status) => {

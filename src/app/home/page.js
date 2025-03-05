@@ -80,9 +80,11 @@ const Home = () => {
             </p>
             
             <div className="flex justify-center space-x-4 flex-wrap gap-6">
-              <Link href="/monitoramento-detalhado" className="bg-white text-blue-700 hover:bg-blue-50 font-bold py-3 px-6 rounded-lg transition-colors duration-200 flex items-center">
+            {usuario && (
+              <Link href="/monitoramento-detalhado" className="bg-white text-blue-700
+               hover:bg-blue-50 font-bold py-3 px-6 rounded-lg transition-colors duration-200 flex items-center">
                 <FaChartLine className="mr-2" /> Monitoramento Detalhado
-              </Link>
+              </Link> )}
               <Link href="/crie-sua-conta" className="bg-blue-500 text-white hover:bg-blue-400 font-bold py-3 px-6 rounded-lg transition-colors duration-200 flex items-center border border-blue-300">
                 <FaUserClock className="mr-2" /> Cadastre-se Já
               </Link>
