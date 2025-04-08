@@ -132,7 +132,7 @@ export default function FaleConosco() {
       <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-8">
-          <Link href="/home" className="text-blue-600 hover:text-blue-800 flex items-center transition-colors duration-200">
+          <Link href="/" className="text-blue-600 hover:text-blue-800 flex items-center transition-colors duration-200">
             <FaArrowLeft className="mr-2" /> Voltar para a página inicial
           </Link>
         </div>

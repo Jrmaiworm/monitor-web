@@ -1,236 +1,563 @@
 "use client";
-
-import React, { useEffect, useState } from 'react';
-import Link from 'next/link';
-import { FaServer, FaBell, FaChartLine, FaCheck, FaTimes, FaClock, FaExclamationTriangle, FaShieldAlt, FaGlobe, FaUserClock, FaInfoCircle, FaEnvelope } from 'react-icons/fa';
+import Head from "next/head";
+import React, { useEffect, useState } from "react";
+import NavBar from "../components/Navbar";
+import { 
+  FaPlay, FaStop, FaTrashAlt, FaInfoCircle, FaGlobe, 
+  FaClock, FaPlus, FaCheck, FaTimes, FaExclamationTriangle,
+  FaChartBar, FaHistory, FaExternalLinkAlt, FaChartLine
+} from "react-icons/fa";
+import ModalPopup from "../components/ModalPopup";
+import api from "@/api/api";
 
 const Home = () => {
   const [usuario, setUsuario] = useState(null);
-  const [popularSites, setPopularSites] = useState([
-    { nome: 'Google', status: 'online', uptime: '99.9%' },
-    { nome: 'Facebook', status: 'online', uptime: '99.7%' },
-    { nome: 'Instagram', status: 'online', uptime: '99.5%' },
-    { nome: 'Twitter', status: 'issues', uptime: '95.2%' },
-    { nome: 'WhatsApp', status: 'online', uptime: '99.8%' },
-    { nome: 'Netflix', status: 'online', uptime: '99.6%' },
-  ]);
+  const [url, setUrl] = useState("");
+  const [urls, setUrls] = useState([]);
+  const [intervalos, setIntervalos] = useState({});
+  const [mensagem, setMensagem] = useState("");
+  const [detalhesVisiveis, setDetalhesVisiveis] = useState(false);
+  const [detalhesMonitoramento, setDetalhesMonitoramento] = useState([]);
+  const [urlSelecionada, setUrlSelecionada] = useState("");
+  const [historicoOffline, setHistoricoOffline] = useState([]);
+  const [porcentagemOnline, setPorcentagemOnline] = useState(0);
+  const [porcentagemOffline, setPorcentagemOffline] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
+  const [deletingId, setDeletingId] = useState(null);
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
-  // Função para recuperar os dados do usuário do localStorage
   useEffect(() => {
-    const usuarioData = localStorage.getItem('user');
+    const usuarioData = localStorage.getItem("user");
     if (usuarioData) {
-      setUsuario(JSON.parse(usuarioData));
+      const user = JSON.parse(usuarioData);
+      setUsuario(user);
+      fetchUrls(user.id);
+    } else {
+      setIsLoading(false);
     }
   }, []);
 
-  // Função para exibir o status do site com a cor adequada
-  const renderStatus = (status) => {
-    switch (status) {
-      case 'online':
-        return (
-          <span className="flex items-center text-green-600">
-            <FaCheck className="mr-1" /> Online
-          </span>
-        );
-      case 'issues':
-        return (
-          <span className="flex items-center text-yellow-600">
-            <FaExclamationTriangle className="mr-1" /> Problemas
-          </span>
-        );
-      case 'offline':
-        return (
-          <span className="flex items-center text-red-600">
-            <FaTimes className="mr-1" /> Offline
-          </span>
-        );
-      default:
-        return (
-          <span className="flex items-center text-gray-600">
-            <FaClock className="mr-1" /> Desconhecido
-          </span>
-        );
+  const fetchUrls = async (userId) => {
+    setIsLoading(true);
+    try {
+      const response = await api.get(
+        `/dominio?userId=${userId}`
+      );
+   
+      setUrls(response.data);
+
+      const intervalosIniciais = response.data.reduce((acc, monitor) => {
+        acc[monitor.id] = monitor.intervalo || 1;
+        return acc;
+      }, {});
+      setIntervalos(intervalosIniciais);
+    } catch (error) {
+      setMensagem("Erro ao buscar URLs monitoradas");
+    } finally {
+      setIsLoading(false);
     }
   };
 
+  const fetchDetalhesMonitoramento = async (monitor) => {
+    try {
+      setMensagem("Carregando detalhes...");
+      const response = await api.get(
+        `/monitor-results?url=${monitor.url}&userId=${monitor.user_id}`
+      );
+     
+      setDetalhesMonitoramento(response.data);
+      setUrlSelecionada(monitor.url);
+
+      // Calcula o histórico de momentos offline
+      const historico = response.data.filter((detalhe) => detalhe.status === "offline");
+      setHistoricoOffline(historico);
+
+      // Calcula a porcentagem de tempo online e offline
+      const total = response.data.length;
+      if (total > 0) {
+        const onlineCount = response.data.filter((detalhe) => detalhe.status === "online").length;
+        const offlineCount = total - onlineCount;
+
+        setPorcentagemOnline(((onlineCount / total) * 100).toFixed(2));
+        setPorcentagemOffline(((offlineCount / total) * 100).toFixed(2));
+      } else {
+        setPorcentagemOnline(0);
+        setPorcentagemOffline(0);
+      }
+
+      setDetalhesVisiveis(true);
+      setMensagem("");
+    } catch (error) {
+      setMensagem("Erro ao buscar detalhes do monitoramento");
+    }
+  };
+
+  const handleAddUrl = async () => {
+    if (!url) {
+      setMensagem("Por favor, insira uma URL válida.");
+      return;
+    }
+
+    // Valida a URL (adiciona https:// se não estiver presente)
+    let urlValidada = url;
+    if (!urlValidada.startsWith('http://') && !urlValidada.startsWith('https://')) {
+      urlValidada = 'https://' + urlValidada;
+    }
+
+    try {
+      setMensagem("Adicionando URL...");
+      const response = await fetch("https://biomob-api.com:3202/dominio", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          user_id: usuario.id,
+          url: urlValidada,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Erro ao adicionar a URL");
+      }
+
+      setMensagem("URL adicionada com sucesso!");
+      setUrl(""); // Limpa o campo de entrada
+      fetchUrls(usuario.id); // Atualiza a lista de URLs
+    } catch (error) {
+      setMensagem("Erro ao adicionar a URL.");
+      console.error("Erro:", error);
+    }
+  };
+
+  const showDeleteConfirmation = (id) => {
+    setDeletingId(id);
+    setConfirmDelete(true);
+  };
+
+  const handleDeleteUrl = async (id) => {
+    try {
+      setMensagem("Excluindo URL...");
+      const response = await api.delete(`/dominio/${id}`); // Usando o método delete do axios
+
+      if (response.status !== 200) {
+        throw new Error("Erro ao deletar a URL");
+      }
+
+      setMensagem("URL excluída com sucesso!");
+      setConfirmDelete(false);
+      setDeletingId(null);
+      fetchUrls(usuario.id);
+    } catch (error) {
+      setMensagem("Erro ao excluir a URL.");
+    }
+  };
+
+const handleIntervalChange = (id, value) => {
+  setIntervalos((prev) => ({
+    ...prev,
+    [id]: value,
+  }));
+};
+
+const handleMonitoramento = async (monitor, action) => {
+  try {
+    setMensagem(`${action === "start" ? "Iniciando" : "Parando"} monitoramento...`);
+    
+    const response = await api.post("/monitor-start", {
+      url: monitor.url,
+      timeInMinutes: intervalos[monitor.id],
+      userId: usuario.id,
+      action: action,
+    }); // Usando o método post do axios
+
+    if (response.status !== 200) {
+      throw new Error(
+        `Erro ao ${action === "start" ? "iniciar" : "parar"} o monitoramento`
+      );
+    }
+
+    setMensagem(
+      `Monitoramento ${action === "start" ? "iniciado" : "parado"} com sucesso!`
+    );
+    fetchUrls(usuario.id);
+  } catch (error) {
+    setMensagem(`Erro ao ${action === "start" ? "iniciar" : "parar"} o monitoramento.`);
+  }
+};
+  const fecharModal = () => {
+    setDetalhesVisiveis(false);
+    setDetalhesMonitoramento([]);
+  };
+
+  // Função que retorna a classe de cor baseada no status
+  const getStatusColor = (status) => {
+    return status === "online" 
+      ? "text-green-500 bg-green-50 border-green-200" 
+      : "text-red-500 bg-red-50 border-red-200";
+  };
+
+  // Função para formatar a data
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleString();
+  };
+
+  console.log('url', urls)
+
   return (
     <div className="bg-gray-50 min-h-screen">
+      <Head>
+        <title>Monitoramento Detalhado | eYe Monitor</title>
+        <meta name="description" content="Monitoramento detalhado de seus sites com o eYe Monitor" />
+      </Head>
+
       <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
         {/* Hero Section */}
         <div className="bg-gradient-to-r from-blue-800 to-blue-600 rounded-xl shadow-lg p-8 mb-8">
           <div className="text-center">
             <h1 className="text-4xl font-bold text-white mb-4">
-              Bem-vindo ao eYe Monitor
+              Monitoramento Detalhado
             </h1>
             
             {usuario ? (
-              <div className="mb-6 text-white">
-                <p className="text-xl">Olá, <strong>{usuario.nome}</strong>!</p>
+              <div className="mb-4 text-white">
+                <p className="text-lg">
+                  Bem-vindo, <strong>{usuario.nome || 'Usuário'}</strong>!
+                </p>
                 <p className="text-sm opacity-80">{usuario.email}</p>
+                <p className="text-sm opacity-80">Plano {usuario.plano}</p>
               </div>
             ) : (
-              <p className="mb-6 text-white opacity-90">
-                O eYe Monitor verifica se o seu site web está no ar, enviando e-mail para alertá-lo em caso de falha ou de retorno do serviço e gerando relatórios de desempenho.
+              <p className="mb-4 text-white opacity-90">
+                Carregando informações do usuário...
               </p>
             )}
             
-            <p className="text-lg text-white opacity-90 mb-8 max-w-3xl mx-auto">
-              Monitore a disponibilidade dos seus sites <strong>24 horas por dia, 7 dias por semana, 365 dias por ano</strong>. 
-              E o plano básico é <strong>GRÁTIS</strong>!
+            <p className="text-lg text-white opacity-90 mb-4 max-w-3xl mx-auto">
+              Gerencie e monitore seus sites em tempo real, receba alertas e visualize estatísticas detalhadas.
             </p>
-            
-            <div className="flex justify-center space-x-4 flex-wrap gap-6">
-            {usuario && (
-              <Link href="/monitoramento-detalhado" className="bg-white text-blue-700
-               hover:bg-blue-50 font-bold py-3 px-6 rounded-lg transition-colors duration-200 flex items-center">
-                <FaChartLine className="mr-2" /> Monitoramento Detalhado
-              </Link> )}
-              <Link href="/crie-sua-conta" className="bg-blue-500 text-white hover:bg-blue-400 font-bold py-3 px-6 rounded-lg transition-colors duration-200 flex items-center border border-blue-300">
-                <FaUserClock className="mr-2" /> Cadastre-se Já
-              </Link>
-            </div>
           </div>
         </div>
-        
-        {/* Imagens do monitoramento */}
-        {/* <div className="mb-8">
-          <h2 className="text-2xl font-bold text-gray-800 mb-4 flex items-center">
-            <FaInfoCircle className="mr-2 text-blue-600" /> Veja o eYe Monitor em ação
-          </h2>
-          <div className="bg-white shadow rounded-lg p-6">
-            <p className="text-gray-700 mb-6">
-              Confira abaixo algumas imagens do sistema de monitoramento de sites e veja como é fácil acompanhar o desempenho do seu site.
-            </p>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="rounded-lg overflow-hidden shadow-md">
-                <img src="/assets/img1.png" alt="Dashboard de Monitoramento" className="w-full h-auto" />
-                <div className="p-4 bg-gray-50">
-                  <h3 className="font-medium text-gray-900">Dashboard de Monitoramento</h3>
-                  <p className="text-sm text-gray-500">Acompanhe o status do seu site em tempo real</p>
-                </div>
-              </div>
-              <div className="rounded-lg overflow-hidden shadow-md">
-                <img src="/assets/img2.png" alt="Relatórios de Desempenho" className="w-full h-auto" />
-                <div className="p-4 bg-gray-50">
-                  <h3 className="font-medium text-gray-900">Relatórios de Desempenho</h3>
-                  <p className="text-sm text-gray-500">Visualize métricas detalhadas sobre a disponibilidade do seu site</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div> */}
-        
-        {/* Status dos sites populares */}
-        <div className="mb-8">
-          <h2 className="text-2xl font-bold text-gray-800 mb-4 flex items-center">
-            <FaGlobe className="mr-2 text-blue-600" /> Status de Sites Populares
-          </h2>
-          <div className="bg-white shadow rounded-lg overflow-hidden">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-gray-200">
-              {popularSites.map((site, index) => (
-                <div key={index} className="p-4 hover:bg-gray-50 transition-colors duration-150">
-                  <div className="flex justify-between items-center">
-                    <h3 className="font-medium text-gray-900">{site.nome}</h3>
-                    {renderStatus(site.status)}
+
+        {/* Adicionar nova URL */}
+        <div className="bg-white rounded-lg shadow-md overflow-hidden border border-gray-200 mb-8">
+          <div className="p-6">
+            <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center">
+              <FaGlobe className="mr-2 text-blue-600" /> Adicionar novo site para monitoramento
+            </h2>
+            
+            <div className="flex flex-col md:flex-row gap-4">
+              <div className="flex-grow">
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <FaGlobe className="text-gray-400" />
                   </div>
-                  <p className="text-sm text-gray-500 mt-1">Uptime: {site.uptime}</p>
+                  <input
+                    type="text"
+                    className="text-gray-500 block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Digite a URL para monitorar (ex: exemplo.com)"
+                    value={url}
+                    onChange={(e) => setUrl(e.target.value)}
+                  />
                 </div>
-              ))}
+              </div>
+              <button
+                onClick={handleAddUrl}
+                className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center justify-center"
+              >
+                <FaPlus className="mr-2" /> Adicionar URL
+              </button>
             </div>
           </div>
         </div>
-        
-        {/* Benefícios e Recursos */}
-        <div className="mb-8">
-          <h2 className="text-2xl font-bold text-gray-800 mb-4 flex items-center">
-            <FaShieldAlt className="mr-2 text-blue-600" /> Por que Monitorar Seu Site?
-          </h2>
+
+        {/* Lista de URLs monitoradas */}
+        <div className="bg-white rounded-lg shadow-md overflow-hidden border border-gray-200 mb-8">
+          <div className="border-b border-gray-200 bg-gray-50 px-6 py-4 flex justify-between items-center">
+            <h2 className="text-xl font-bold text-gray-800 flex items-center">
+              <FaChartLine className="mr-2 text-blue-600" /> Minhas URLs Monitoradas
+            </h2>
+            <span className="text-sm text-gray-500">{urls.length} sites</span>
+          </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {/* Card 1 */}
-            <div className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300">
-              <div className="rounded-full bg-blue-100 w-12 h-12 flex items-center justify-center mb-4">
-                <FaServer className="text-blue-600 text-xl" />
+          <div className="divide-y divide-gray-200">
+            {isLoading ? (
+              <div className="p-6 text-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                <p className="text-gray-500">Carregando seus sites...</p>
               </div>
-              <h3 className="text-lg font-semibold text-gray-800 mb-2">Detecção Rápida de Problemas</h3>
-              <p className="text-gray-600">
-                Identifique problemas de desempenho e disponibilidade assim que eles ocorrem, antes que seus usuários sejam afetados.
-              </p>
-            </div>
-            
-            {/* Card 2 */}
-            <div className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300">
-              <div className="rounded-full bg-blue-100 w-12 h-12 flex items-center justify-center mb-4">
-                <FaBell className="text-blue-600 text-xl" />
+            ) : urls.length > 0 ? (
+              urls.map((monitor) => (
+                <div key={monitor.id} className="p-4 hover:bg-gray-50 transition-colors">
+                  <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                    <div className="flex-grow">
+                      <div className="flex items-center">
+                        <div className={`w-3 h-3 rounded-full mr-2 ${monitor.monitorando ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`}></div>
+                        <h3 className="font-medium text-gray-900">{monitor.url}</h3>
+                      </div>
+                      <div className="flex items-center mt-1 text-sm text-gray-500">
+                        <FaClock className="mr-1" />
+                        <span>Intervalo: {intervalos[monitor.id] || 1} min</span>
+                        <span className="ml-4 px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100">
+                          {monitor.monitorando ? 'Monitorando' : 'Parado'}
+                        </span>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center space-x-4">
+                      <div className="flex items-center border rounded-lg overflow-hidden">
+                        <input
+                          type="number"
+                          min="1"
+                          className="w-16 py-1 px-2 text-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                          value={intervalos[monitor.id] || 1}
+                          onChange={(e) => handleIntervalChange(monitor.id, e.target.value)}
+                        />
+                        <span className="bg-gray-100 px-2 py-1 text-sm text-gray-600">min</span>
+                      </div>
+                      
+                      <button
+                        onClick={() => handleMonitoramento(monitor, monitor.monitorando ? "stop" : "start")}
+                        className={`flex items-center justify-center h-8 w-8 rounded-lg ${
+                          monitor.monitorando 
+                            ? "bg-red-100 text-red-600 hover:bg-red-200" 
+                            : "bg-green-100 text-green-600 hover:bg-green-200"
+                        }`}
+                        title={monitor.monitorando ? "Parar monitoramento" : "Iniciar monitoramento"}
+                      >
+                        {monitor.monitorando ? <FaStop size={14} /> : <FaPlay size={14} />}
+                      </button>
+                      
+                      <button
+                        onClick={() => showDeleteConfirmation(monitor.id)}
+                        className="flex items-center justify-center h-8 w-8 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200"
+                        title="Excluir URL"
+                      >
+                        <FaTrashAlt size={14} />
+                      </button>
+                      
+                      <button
+                        onClick={() => fetchDetalhesMonitoramento(monitor)}
+                        className="flex items-center justify-center h-8 w-8 rounded-lg bg-blue-100 text-blue-600 hover:bg-blue-200"
+                        title="Ver detalhes"
+                      >
+                        <FaInfoCircle size={14} />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="p-6 text-center">
+                <div className="rounded-full bg-blue-100 w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                  <FaGlobe className="text-blue-600 text-2xl" />
+                </div>
+                <h3 className="text-lg font-medium text-gray-900 mb-1">Nenhum site monitorado</h3>
+                <p className="text-gray-500 mb-4">Adicione URLs para começar a monitorar seus sites</p>
               </div>
-              <h3 className="text-lg font-semibold text-gray-800 mb-2">Alertas em Tempo Real</h3>
-              <p className="text-gray-600">
-                Receba notificações instantâneas quando seu site apresentar problemas ou ficar fora do ar, permitindo ação rápida.
-              </p>
-            </div>
-            
-            {/* Card 3 */}
-            <div className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300">
-              <div className="rounded-full bg-blue-100 w-12 h-12 flex items-center justify-center mb-4">
-                <FaChartLine className="text-blue-600 text-xl" />
-              </div>
-              <h3 className="text-lg font-semibold text-gray-800 mb-2">Análise de Desempenho</h3>
-              <p className="text-gray-600">
-                Visualize relatórios detalhados sobre o desempenho do seu site ao longo do tempo, identificando tendências e áreas para melhorias.
-              </p>
-            </div>
-            
-            {/* Card 4 */}
-            <div className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300">
-              <div className="rounded-full bg-blue-100 w-12 h-12 flex items-center justify-center mb-4">
-                <FaUserClock className="text-blue-600 text-xl" />
-              </div>
-              <h3 className="text-lg font-semibold text-gray-800 mb-2">Melhore a Experiência do Usuário</h3>
-              <p className="text-gray-600">
-                Garanta uma experiência consistente e confiável para seus visitantes, aumentando a satisfação e retenção de clientes.
-              </p>
-            </div>
-            
-            {/* Card 5 */}
-            <div className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300">
-              <div className="rounded-full bg-blue-100 w-12 h-12 flex items-center justify-center mb-4">
-                <FaGlobe className="text-blue-600 text-xl" />
-              </div>
-              <h3 className="text-lg font-semibold text-gray-800 mb-2">Monitoramento Global</h3>
-              <p className="text-gray-600">
-                Verifique a disponibilidade do seu site a partir de diferentes regiões do mundo, garantindo acesso global sem problemas.
-              </p>
-            </div>
-            
-            {/* Card 6 */}
-            <div className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300">
-              <div className="rounded-full bg-blue-100 w-12 h-12 flex items-center justify-center mb-4">
-                <FaEnvelope className="text-blue-600 text-xl" />
-              </div>
-              <h3 className="text-lg font-semibold text-gray-800 mb-2">Alertas por E-mail</h3>
-              <p className="text-gray-600">
-                Receba e-mails de alerta em caso de falha ou quando o serviço voltar ao normal, permitindo que você esteja sempre informado.
-              </p>
-            </div>
+            )}
           </div>
         </div>
-        
+
         {/* CTA Section */}
         <div className="bg-blue-50 border border-blue-100 rounded-lg p-8 text-center">
-          <h2 className="text-2xl font-bold text-blue-800 mb-4">Pronto para garantir a disponibilidade do seu site?</h2>
+          <h2 className="text-2xl font-bold text-blue-800 mb-4">Precisa monitorar mais sites?</h2>
           <p className="text-lg text-blue-700 mb-6">
-            Comece a monitorar seu site agora e nunca mais seja pego de surpresa por problemas de disponibilidade.
+            Conheça nossos planos avançados e monitore múltiplos sites com intervalos de verificação mais curtos.
           </p>
           <div className="flex flex-col sm:flex-row justify-center gap-4">
-            <Link href="/crie-sua-conta" className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg transition-colors duration-200">
-              Cadastre-se Agora
-            </Link>
-            <Link href="/fale-conosco" className="bg-white hover:bg-gray-50 text-blue-600 border border-blue-200 font-bold py-3 px-8 rounded-lg transition-colors duration-200">
+            <a href="/planos" className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg transition-colors duration-200">
+              Ver Planos
+            </a>
+            <a href="/fale-conosco" className="bg-white hover:bg-gray-50 text-blue-600 border border-blue-200 font-bold py-3 px-8 rounded-lg transition-colors duration-200">
               Fale Conosco
-            </Link>
+            </a>
           </div>
         </div>
       </div>
+
+      {/* Modal de confirmação de exclusão */}
+      {confirmDelete && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg max-w-md mx-auto">
+            <h3 className="text-lg font-bold text-gray-900 mb-4">Confirmar exclusão</h3>
+            <p className="text-gray-700 mb-6">
+              Tem certeza que deseja excluir esta URL? Esta ação não pode ser desfeita.
+            </p>
+            <div className="flex justify-end space-x-4">
+              <button
+                onClick={() => setConfirmDelete(false)}
+                className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => handleDeleteUrl(deletingId)}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+              >
+                Excluir
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de detalhes do monitoramento */}
+      {detalhesVisiveis && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50 overflow-y-auto py-8">
+          <div className="bg-white rounded-lg shadow-lg max-w-5xl mx-auto w-full sm:w-11/12 max-h-[90vh] overflow-hidden flex flex-col">
+            <div className="p-6 border-b border-gray-200">
+              <div className="flex justify-between items-center">
+                <h2 className="text-xl font-bold text-gray-900 flex items-center">
+                  <FaHistory className="mr-2 text-blue-600" /> 
+                  Detalhes do Monitoramento
+                </h2>
+                <button
+                  onClick={fecharModal}
+                  className="text-gray-400 hover:text-gray-500"
+                >
+                  <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+            
+            <div className="p-6 overflow-y-auto">
+              <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 mb-6">
+                <h3 className="text-lg font-medium text-gray-900 mb-2">URL: {urlSelecionada}</h3>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                  <div className="bg-white p-4 rounded-lg border border-gray-200">
+                    <div className="flex items-center justify-between">
+                      <span className="text-gray-500">Disponibilidade:</span>
+                      <span className="text-green-600 font-medium">{porcentagemOnline}%</span>
+                    </div>
+                    
+                    <div className="mt-2 h-2 bg-gray-200 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-green-500"
+                        style={{ width: `${porcentagemOnline}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                  
+                  <div className="bg-white p-4 rounded-lg border border-gray-200">
+                    <div className="flex items-center justify-between">
+                      <span className="text-gray-500">Tempo offline:</span>
+                      <span className="text-red-600 font-medium">{porcentagemOffline}%</span>
+                    </div>
+                    
+                    <div className="mt-2 h-2 bg-gray-200 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-red-500"
+                        style={{ width: `${porcentagemOffline}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="text-sm text-gray-500 flex items-center">
+                  <FaInfoCircle className="mr-1" />
+                  Total de verificações: {detalhesMonitoramento.length}
+                </div>
+              </div>
+              
+              <h3 className="text-lg font-medium text-gray-900 mb-4">Histórico de verificações</h3>
+              
+              {detalhesMonitoramento.length > 0 ? (
+                <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Status
+                          </th>
+                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Data/Hora
+                          </th>
+                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Resposta
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {detalhesMonitoramento.map((detalhe, index) => (
+                          <tr key={index} className="hover:bg-gray-50">
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                detalhe.status === "online" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
+                              }`}>
+                                {detalhe.status === "online" ? (
+                                  <><FaCheck className="mr-1" /> Online</>
+                                ) : (
+                                  <><FaTimes className="mr-1" /> Offline</>
+                                )}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              {formatDate(detalhe.checked_at)}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              {detalhe.response_time ? `${detalhe.response_time}ms` : "-"}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              ) : (
+                <div className="bg-gray-50 p-6 text-center rounded-lg border border-gray-200">
+                  <p className="text-gray-500">Nenhum histórico de verificação disponível.</p>
+                </div>
+              )}
+              
+              {historicoOffline.length > 0 && (
+                <div className="mt-6">
+                  <h3 className="text-lg font-medium text-gray-900 mb-4">Períodos offline</h3>
+                  
+                  <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full divide-y divide-gray-200">
+                        <thead className="bg-gray-50">
+                          <tr>
+                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Data/Hora
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-200">
+                          {historicoOffline.map((detalhe, index) => (
+                            <tr key={index} className="hover:bg-gray-50">
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-red-600">
+                                <FaExclamationTriangle className="mr-1 inline-block" /> {formatDate(detalhe.checked_at)}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+            
+            <div className="p-4 border-t border-gray-200 bg-gray-50 flex justify-end">
+              <button
+                onClick={fecharModal}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              >
+                Fechar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <ModalPopup mensagem={mensagem} onClose={() => setMensagem("")} />
     </div>
   );
 };

@@ -1,7 +1,7 @@
 import { Inter } from "next/font/google";
 import "./globals.css";
 import Footer from "./components/Footer";
-import NavBar from "./components/Navbar";
+import NavbarWrapper from "./components/NavbarWrapper";
 import Header from "./components/Header"; // Importando o componente Header
 import Head from "next/head";
 
@@ -33,10 +33,8 @@ export default function RootLayout({ children }) {
             <Header />
           </div>
 
-          {/* NavBar abaixo do Header */}
-          <div className="z-20 relative">
-            <NavBar />
-          </div>
+          {/* NavBar abaixo do Header (condicionalmente renderizada) */}
+          <NavbarWrapper />
 
           {/* Logo central com opacidade reduzida */}
           <div className="absolute inset-0 flex items-center justify-center z-0">

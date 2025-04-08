@@ -15,11 +15,7 @@ const PlanosDeAssinatura = () => {
       
       <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="mb-8">
-          <Link href="/" className="text-blue-600 hover:text-blue-800 flex items-center transition-colors duration-200">
-            <FaArrowLeft className="mr-2" /> Voltar para a página inicial
-          </Link>
-        </div>
+   
         
         {/* Hero Section */}
         <div className="bg-gradient-to-r from-blue-600 to-blue-500 rounded-xl shadow-lg p-8 mb-8">
@@ -86,7 +82,7 @@ const PlanosDeAssinatura = () => {
                 </li>
               </ul>
               
-              <div className="mt-8">
+              <div className="mt-14">
                 <button className="w-full py-3 px-4 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium transition duration-200">
                   Começar Agora
                 </button>

@@ -54,10 +54,10 @@ const Header = () => {
     setUsuario(null);
     
     try {
-      router.push('/home');
+      router.push('/');
       window.reload()
     } catch (error) {
-      window.location.href = '/home';
+      window.location.href = '/';
     }
   };
 
@@ -86,7 +86,7 @@ const Header = () => {
     <header className="bg-gradient-to-r from-blue-800 to-blue-600 py-4 px-6 shadow-lg">
       <div className="max-w-7xl mx-auto flex justify-between items-center">
         {/* Logo e Nome */}
-        <Link href="/" className="flex items-center">
+        <Link href="" className="flex items-center">
           <div className="bg-white p-2 rounded-full shadow-md mr-3">
             <FaEye className="text-blue-600 text-2xl" />
           </div>
@@ -99,26 +99,22 @@ const Header = () => {
         {/* Área do Usuário */}
         <div className="flex items-center">
           {usuario ? (
-            // Usuário logado - Mostra nome/email e botão de logout
-            <div className="flex items-center">
-              <div className="hidden md:block mr-4 text-right">
-                <p className="text-white font-medium">{usuario.nome || 'Usuário'}</p>
-                <p className="text-xs text-blue-100">{usuario.email}</p>
+            <div className="flex items-center space-x-4">
+              <div className="text-white text-right hidden md:block">
+                <p className="font-medium">{usuario.nome}</p>
+                <p className="text-sm text-blue-100">{usuario.email}</p>
               </div>
-              <button 
-                className="flex items-center bg-blue-700 hover:bg-blue-500 text-white py-2 px-4 rounded-lg transition-colors duration-150"
+              <button
                 onClick={handleLogout}
+                className="bg-white text-blue-700 hover:bg-blue-50 px-3 py-1 rounded-md text-sm font-medium transition-colors duration-200 flex items-center"
               >
-                <FaSignOutAlt className="mr-2" />
-                <span className="hidden md:inline">Sair</span>
+                <FaSignOutAlt className="mr-1" /> Sair
               </button>
             </div>
           ) : (
-            // Usuário não logado - Mostra apenas botão de login
-            <Link href="/login" className="flex items-center bg-white hover:bg-blue-50 text-blue-600 py-2 px-4 rounded-lg transition-colors duration-150">
-              <FaUser className="mr-2" />
-              <span>Entrar</span>
-            </Link>
+            <div className="flex items-center space-x-2">
+         
+            </div>
           )}
         </div>
       </div>

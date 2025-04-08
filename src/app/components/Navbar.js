@@ -62,15 +62,15 @@ const NavBar = () => {
           
           {/* Links de navegação (desktop) */}
           <div className="hidden md:flex md:items-center md:space-x-1">
-           
+            
             
             {!usuario?.token && (
               <>
                  <NavDesktopItem 
-              href="/home" 
-              label="HOME" 
+              href="/" 
+              label="INÍCIO" 
               icon={<FaHome />} 
-              active={isActive('/home')} 
+              active={isActive('/')} 
             />
                 <NavDesktopItem 
                   href="/como-funciona" 
@@ -96,6 +96,12 @@ const NavBar = () => {
             {usuario?.token && (
               <>
                 <NavDesktopItem 
+                  href="/home" 
+                  label="HOME" 
+                  icon={<FaHome />} 
+                  active={isActive('/home')} 
+                />
+                <NavDesktopItem 
                   href="/monitoramento-detalhado" 
                   label="MONITORAMENTO" 
                   icon={<FaChartLine />} 
@@ -110,106 +116,157 @@ const NavBar = () => {
               </>
             )}
           </div>
-        </div>
-      </div>
-
-      {/* Menu mobile */}
-      <div className={`md:hidden ${menuOpen ? 'block' : 'hidden'}`}>
-        <div className="pt-2 pb-4 space-y-1 bg-white border-t border-gray-200">
-          <NavMobileItem 
-            href="/home" 
-            label="Home" 
-            icon={<FaHome />} 
-            active={isActive('/home')} 
-          />
           
-          {!usuario?.token && (
-            <>
-              <NavMobileItem 
-                href="/crie-sua-conta" 
-                label="Criar Conta" 
-                icon={<FaUserPlus />} 
-                active={isActive('/crie-sua-conta')} 
-              />
-              <NavMobileItem 
-                href="/como-funciona" 
-                label="Como Funciona" 
-                icon={<FaInfoCircle />} 
-                active={isActive('/como-funciona')} 
-              />
-              <NavMobileItem 
-                href="/planos-de-assinatura" 
-                label="Planos de Assinatura" 
-                icon={<FaTag />} 
-                active={isActive('/planos-de-assinatura')} 
-              />
-              <NavMobileItem 
-                href="/verificacao-rapida" 
-                label="Verificação Rápida" 
-                icon={<FaSearch />} 
-                active={isActive('/verificacao-rapida')} 
-              />
-              <NavMobileItem 
+          {/* Botões de login/cadastro (desktop) */}
+          <div className="hidden md:flex md:items-center md:space-x-2">
+            {!usuario?.token ? (
+              <>
+                <Link 
+                  href="/login" 
+                  className={`px-4 py-2 rounded-md text-sm font-medium transition-colors duration-200 ${
+                    isActive('/login') 
+                      ? 'bg-blue-100 text-blue-700' 
+                      : 'text-blue-700 hover:bg-blue-50'
+                  }`}
+                >
+                  <FaSignInAlt className="inline-block mr-1" /> Login
+                </Link>
+                <Link 
+                  href="/crie-sua-conta" 
+                  className="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700 transition-colors duration-200"
+                >
+                  <FaUserPlus className="inline-block mr-1" /> Cadastre-se
+                </Link>
+              </>
+            ) : (
+              <Link 
                 href="/login" 
-                label="Login" 
-                icon={<FaSignInAlt />} 
-                active={isActive('/login')} 
-              />
-            </>
-          )}
-          
-          {usuario?.token && (
-            <>
-              <NavMobileItem 
-                href="/monitoramento-detalhado" 
-                label="Monitoramento" 
-                icon={<FaChartLine />} 
-                active={isActive('/monitoramento-detalhado')} 
-              />
-              <NavMobileItem 
-                href="/meus-sites" 
-                label="Meus Sites" 
-                icon={<FaServer />} 
-                active={isActive('/meus-sites')} 
-              />
-            </>
-          )}
+                onClick={() => {
+                  localStorage.removeItem('user');
+                  router.push('/');
+                }}
+                className="text-blue-700 hover:bg-blue-50 px-4 py-2 rounded-md text-sm font-medium transition-colors duration-200"
+              >
+                <FaSignInAlt className="inline-block mr-1" /> Sair
+              </Link>
+            )}
+          </div>
         </div>
       </div>
+      
+      {/* Menu mobile */}
+      {menuOpen && (
+        <div className="md:hidden bg-white border-t border-gray-200">
+          <div className="px-2 pt-2 pb-3 space-y-1">
+            {!usuario?.token ? (
+              <>
+                <NavMobileItem 
+                  href="/" 
+                  label="INÍCIO" 
+                  icon={<FaHome />} 
+                  active={isActive('/')} 
+                />
+                <NavMobileItem 
+                  href="/como-funciona" 
+                  label="COMO FUNCIONA" 
+                  icon={<FaInfoCircle />} 
+                  active={isActive('/como-funciona')} 
+                />
+                <NavMobileItem 
+                  href="/planos-de-assinatura" 
+                  label="PLANOS DE ASSINATURA" 
+                  icon={<FaTag />} 
+                  active={isActive('/planos-de-assinatura')} 
+                />
+                <NavMobileItem 
+                  href="/verificacao-rapida" 
+                  label="VERIFICAÇÃO RÁPIDA" 
+                  icon={<FaSearch />} 
+                  active={isActive('/verificacao-rapida')} 
+                />
+                <div className="pt-4 pb-3 border-t border-gray-200">
+                  <NavMobileItem 
+                    href="/login" 
+                    label="LOGIN" 
+                    icon={<FaSignInAlt />} 
+                    active={isActive('/login')} 
+                  />
+                  <NavMobileItem 
+                    href="/crie-sua-conta" 
+                    label="CADASTRE-SE" 
+                    icon={<FaUserPlus />} 
+                    active={isActive('/crie-sua-conta')} 
+                  />
+                </div>
+              </>
+            ) : (
+              <>
+                <NavMobileItem 
+                  href="/home" 
+                  label="HOME" 
+                  icon={<FaHome />} 
+                  active={isActive('/home')} 
+                />
+                <NavMobileItem 
+                  href="/monitoramento-detalhado" 
+                  label="MONITORAMENTO" 
+                  icon={<FaChartLine />} 
+                  active={isActive('/monitoramento-detalhado')} 
+                />
+                <NavMobileItem 
+                  href="/meus-sites" 
+                  label="MEUS SITES" 
+                  icon={<FaServer />} 
+                  active={isActive('/meus-sites')} 
+                />
+                <div className="pt-4 pb-3 border-t border-gray-200">
+                  <NavMobileItem 
+                    href="/login" 
+                    label="SAIR" 
+                    icon={<FaSignInAlt />} 
+                    active={false}
+                    onClick={() => {
+                      localStorage.removeItem('user');
+                      router.push('/');
+                    }}
+                  />
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </nav>
   );
 };
 
-// Componente para itens de navegação desktop
 const NavDesktopItem = ({ href, label, icon, active }) => {
   return (
     <Link 
-      href={href}
-      className={`flex items-center px-4 py-2 text-sm font-medium rounded-md transition-colors duration-150 ${
+      href={href} 
+      className={`px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 ${
         active 
-          ? 'text-blue-700 bg-blue-50' 
-          : 'text-gray-700 hover:text-blue-700 hover:bg-gray-50'
+          ? 'bg-blue-100 text-blue-700' 
+          : 'text-gray-700 hover:bg-gray-100'
       }`}
     >
-      <span className="mr-1">{icon}</span>
-      {label}
+      {icon} <span className="ml-2">{label}</span>
     </Link>
   );
 };
 
-// Componente para itens de navegação mobile
-const NavMobileItem = ({ href, label, icon, active }) => {
+const NavMobileItem = ({ href, label, icon, active, onClick }) => {
   return (
     <Link 
-      href={href}
-      className={`flex items-center px-4 py-3 text-base font-medium ${
+      href={href} 
+      onClick={onClick}
+      className={`block px-3 py-2 rounded-md text-base font-medium transition-colors duration-200 ${
         active 
-          ? 'text-blue-700 bg-blue-50' 
-          : 'text-gray-700 hover:text-blue-700 hover:bg-gray-50'
+          ? 'bg-blue-100 text-blue-700' 
+          : 'text-gray-700 hover:bg-gray-100'
       }`}
     >
-      <span className="mr-3">{icon}</span>
-      {label}
+      {icon} <span className="ml-2">{label}</span>
     </Link>
   );
 };
