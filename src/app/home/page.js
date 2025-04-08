@@ -5,7 +5,7 @@ import NavBar from "../components/Navbar";
 import { 
   FaPlay, FaStop, FaTrashAlt, FaInfoCircle, FaGlobe, 
   FaClock, FaPlus, FaCheck, FaTimes, FaExclamationTriangle,
-  FaChartBar, FaHistory, FaExternalLinkAlt, FaChartLine
+  FaChartBar, FaHistory, FaExternalLinkAlt, FaChartLine, FaCog, FaEllipsisV, FaBell, FaTimesCircle
 } from "react-icons/fa";
 import ModalPopup from "../components/ModalPopup";
 import api from "@/api/api";
@@ -26,12 +26,25 @@ const Home = () => {
   const [deletingId, setDeletingId] = useState(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [limiteAtingido, setLimiteAtingido] = useState(false);
+  const [limiteUrls, setLimiteUrls] = useState(0);
 
   useEffect(() => {
     const usuarioData = localStorage.getItem("user");
     if (usuarioData) {
       const user = JSON.parse(usuarioData);
       setUsuario(user);
+      
+      // Define o limite de URLs baseado no tipo de plano
+      if (user.plano === "BASICO") {
+        setLimiteUrls(1);
+      } else if (user.plano === "AVANCADO") {
+        setLimiteUrls(3);
+      } else if (user.plano === "SUPER") {
+        setLimiteUrls(10);
+      } else {
+        setLimiteUrls(1); // Valor padrão
+      }
+      
       fetchUrls(user.id);
     } else {
       setIsLoading(false);
@@ -50,10 +63,14 @@ const Home = () => {
       // Verifica se o usuário atingiu o limite de URLs para o plano básico
       if (usuario?.plano === "BASICO" && response.data.length >= 1) {
         setLimiteAtingido(true);
+      } else if (usuario?.plano === "AVANCADO" && response.data.length >= 3) {
+        setLimiteAtingido(true);
+      } else if (usuario?.plano === "SUPER" && response.data.length >= 10) {
+        setLimiteAtingido(true);
       }
 
       const intervalosIniciais = response.data.reduce((acc, monitor) => {
-        acc[monitor.id] = monitor.intervalo_minutos || 1;
+        acc[monitor.id] = monitor.intervalo || 1;
         return acc;
       }, {});
       setIntervalos(intervalosIniciais);
@@ -104,9 +121,15 @@ const Home = () => {
       return;
     }
 
-    // Verifica se o usuário com plano básico já atingiu o limite
+    // Verifica se o usuário já atingiu o limite
     if (usuario?.plano === "BASICO" && urls.length >= 1) {
       setMensagem("Você atingiu o limite de URLs para o seu plano. Faça upgrade para adicionar mais URLs.");
+      return;
+    } else if (usuario?.plano === "AVANCADO" && urls.length >= 3) {
+      setMensagem("Você atingiu o limite de URLs para o seu plano. Faça upgrade para adicionar mais URLs.");
+      return;
+    } else if (usuario?.plano === "SUPER" && urls.length >= 10) {
+      setMensagem("Você atingiu o limite de URLs para o seu plano.");
       return;
     }
 
@@ -252,60 +275,153 @@ const handleMonitoramento = async (monitor, action) => {
           </div>
         </div>
 
-        {/* Adicionar nova URL */}
-        <div className="bg-white rounded-lg shadow-md overflow-hidden border border-gray-200 mb-8">
-          <div className="p-6">
-            <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center">
-              <FaGlobe className="mr-2 text-blue-600" /> Adicionar novo site para monitoramento
-            </h2>
-            
-            {limiteAtingido && usuario?.plano === "BASICO" ? (
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+        {/* Cards de Adicionar URL e Configurações */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+          {/* Adicionar nova URL */}
+          <div className="bg-white rounded-lg shadow-md overflow-hidden border border-gray-200">
+            <div className="p-6">
+              <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center">
+                <FaGlobe className="mr-2 text-blue-600" /> Adicionar novo site para monitoramento
+              </h2>
+              
+              <div className="mb-4 text-sm text-gray-600 bg-blue-50 p-3 rounded-lg border border-blue-100">
                 <div className="flex items-start">
-                  <FaExclamationTriangle className="text-yellow-500 mt-1 mr-3 flex-shrink-0" />
+                  <FaInfoCircle className="text-blue-500 mt-0.5 mr-2 flex-shrink-0" />
                   <div>
-                    <h3 className="text-yellow-800 font-medium">Limite de URLs atingido</h3>
-                    <p className="text-yellow-700 mt-1">
-                      Seu plano básico permite monitorar apenas 1 URL. Faça upgrade para adicionar mais URLs.
+                    <p>
+                      Seu plano <span className="font-medium">{usuario?.plano || "Básico"}</span> permite monitorar até <span className="font-medium">{limiteUrls} {limiteUrls === 1 ? "URL" : "URLs"}</span>.
+                      {urls.length > 0 && (
+                        <span> Você já está monitorando <span className="font-medium">{urls.length} {urls.length === 1 ? "URL" : "URLs"}</span>.</span>
+                      )}
                     </p>
-                    <a 
-                      href="/planos-de-assinatura" 
-                      className="mt-3 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                    >
-                      Fazer upgrade
-                    </a>
                   </div>
                 </div>
               </div>
-            ) : null}
+              
+              {limiteAtingido ? (
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+                  <div className="flex items-start">
+                    <FaExclamationTriangle className="text-yellow-500 mt-1 mr-3 flex-shrink-0" />
+                    <div>
+                      <h3 className="text-yellow-800 font-medium">Limite de URLs atingido</h3>
+                      <p className="text-yellow-700 mt-1">
+                        Seu plano {usuario?.plano} permite monitorar apenas {limiteUrls} {limiteUrls === 1 ? "URL" : "URLs"}. Faça upgrade para adicionar mais URLs.
+                      </p>
+                      <a 
+                        href="/planos-de-assinatura" 
+                        className="mt-3 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                      >
+                        Fazer upgrade
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              ) : null}
+              
+              <div className="flex flex-col md:flex-row gap-4">
+                <div className="flex-grow">
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <FaGlobe className="text-gray-400" />
+                    </div>
+                    <input
+                      type="text"
+                      className="text-gray-500 block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="Digite a URL para monitorar (ex: exemplo.com)"
+                      value={url}
+                      onChange={(e) => setUrl(e.target.value)}
+                      disabled={limiteAtingido && usuario?.plano === "BASICO"}
+                    />
+                  </div>
+                </div>
+                <button
+                  onClick={handleAddUrl}
+                  className={`flex items-center justify-center px-4 py-2 rounded-lg transition-colors ${
+                    limiteAtingido && usuario?.plano === "BASICO"
+                      ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                      : "bg-blue-600 hover:bg-blue-700 text-white"
+                  }`}
+                  disabled={limiteAtingido && usuario?.plano === "BASICO"}
+                >
+                  <FaPlus className="mr-2" /> Adicionar URL
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Card de Configurações */}
+          <div className="bg-white rounded-lg shadow-md overflow-hidden border border-gray-200">
+            <div className="p-6 border-b border-gray-100">
+              <div className="flex justify-between items-center">
+                <div className="flex items-center space-x-3">
+                  <div className="bg-blue-100 p-2 rounded-lg">
+                    <FaCog className="text-blue-600 text-xl" />
+                  </div>
+                  <h2 className="text-xl font-bold text-gray-800">Configurações</h2>
+                </div>
+                <button className="text-gray-400 hover:text-gray-600 transition-colors">
+                  <FaEllipsisV />
+                </button>
+              </div>
+            </div>
             
-            <div className="flex flex-col md:flex-row gap-4">
-              <div className="flex-grow">
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <FaGlobe className="text-gray-400" />
+            <div className="p-6">
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Notificações</label>
+                  <div className="space-y-2">
+                    <label className="flex items-center">
+                      <input 
+                        type="checkbox" 
+                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                      />
+                      <span className="ml-2 text-sm text-gray-700">
+                        E-mail para falhas
+                      </span>
+                    </label>
+                    
+                    <label className="flex items-center">
+                      <input 
+                        type="checkbox" 
+                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                      />
+                      <span className="ml-2 text-sm text-gray-700">
+                        Relatório semanal
+                      </span>
+                    </label>
                   </div>
-                  <input
-                    type="text"
-                    className="text-gray-500 block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="Digite a URL para monitorar (ex: exemplo.com)"
-                    value={url}
-                    onChange={(e) => setUrl(e.target.value)}
-                    disabled={limiteAtingido && usuario?.plano === "BASICO"}
-                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Contatos para alertas</label>
+                  <div className="space-y-2">
+                    <div className="flex items-center">
+                      <input 
+                        type="email" 
+                        placeholder="exemplo@email.com" 
+                        className="flex-grow rounded-l-lg border border-gray-300 px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      />
+                      <button className="bg-blue-600 text-white px-3 py-2 rounded-r-lg hover:bg-blue-700 transition-colors">
+                        <FaPlus size={12} />
+                      </button>
+                    </div>
+                    
+                    <div className="flex justify-between items-center bg-gray-50 px-3 py-2 rounded-lg border border-gray-200">
+                      <span className="text-sm text-gray-500">admin@exemplo.com</span>
+                      <button className="text-red-500 hover:text-red-700">
+                        <FaTimesCircle size={14} />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="pt-3">
+                  <button className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center justify-center">
+                    <FaBell className="mr-2" />
+                    Testar Notificações
+                  </button>
                 </div>
               </div>
-              <button
-                onClick={handleAddUrl}
-                className={`flex items-center justify-center px-4 py-2 rounded-lg transition-colors ${
-                  limiteAtingido && usuario?.plano === "BASICO"
-                    ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                    : "bg-blue-600 hover:bg-blue-700 text-white"
-                }`}
-                disabled={limiteAtingido && usuario?.plano === "BASICO"}
-              >
-                <FaPlus className="mr-2" /> Adicionar URL
-              </button>
             </div>
           </div>
         </div>
@@ -336,7 +452,7 @@ const handleMonitoramento = async (monitor, action) => {
                       </div>
                       <div className="flex items-center mt-1 text-sm text-gray-500">
                         <FaClock className="mr-1" />
-                        <span>Intervalo: {intervalos[monitor.id] || 1} min</span>
+                        <span>Intervalo: {monitor.intervalo_minutos || 1} min</span>
                         <span className="ml-4 px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100">
                           {monitor.monitorando ? 'Monitorando' : 'Parado'}
                         </span>
