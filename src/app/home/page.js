@@ -53,7 +53,7 @@ const Home = () => {
       }
 
       const intervalosIniciais = response.data.reduce((acc, monitor) => {
-        acc[monitor.id] = monitor.intervalo || 1;
+        acc[monitor.id] = monitor.intervalo_minutos || 1;
         return acc;
       }, {});
       setIntervalos(intervalosIniciais);
@@ -514,10 +514,10 @@ const handleMonitoramento = async (monitor, action) => {
                             Status
                           </th>
                           <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Data/Hora
+                            Início 
                           </th>
                           <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Resposta
+                            Último monitoramento
                           </th>
                         </tr>
                       </thead>
@@ -539,7 +539,7 @@ const handleMonitoramento = async (monitor, action) => {
                               {formatDate(detalhe.checked_at)}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                              {detalhe.response_time ? `${detalhe.response_time}ms` : "-"}
+                              {detalhe.checked ? `${formatDate(detalhe.checked)}` : "-"}
                             </td>
                           </tr>
                         ))}
