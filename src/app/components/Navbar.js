@@ -244,13 +244,13 @@ const NavDesktopItem = ({ href, label, icon, active }) => {
   return (
     <Link 
       href={href} 
-      className={`px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 ${
+      className={`px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 flex items-center ${
         active 
           ? 'bg-blue-100 text-blue-700' 
           : 'text-gray-700 hover:bg-gray-100'
       }`}
     >
-      {icon} <span className="ml-2">{label}</span>
+      <span className="mr-2">{icon}</span> <span>{label}</span>
     </Link>
   );
 };
@@ -260,13 +260,13 @@ const NavMobileItem = ({ href, label, icon, active, onClick }) => {
     <Link 
       href={href} 
       onClick={onClick}
-      className={`block px-3 py-2 rounded-md text-base font-medium transition-colors duration-200 ${
+      className={`block px-3 py-2 rounded-md text-base font-medium transition-colors duration-200 flex items-center ${
         active 
           ? 'bg-blue-100 text-blue-700' 
           : 'text-gray-700 hover:bg-gray-100'
       }`}
     >
-      {icon} <span className="ml-2">{label}</span>
+      <span className="mr-2">{icon}</span> <span>{label}</span>
     </Link>
   );
 };
