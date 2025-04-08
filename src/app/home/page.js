@@ -25,6 +25,7 @@ const Home = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [deletingId, setDeletingId] = useState(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [limiteAtingido, setLimiteAtingido] = useState(false);
 
   useEffect(() => {
     const usuarioData = localStorage.getItem("user");
@@ -45,6 +46,11 @@ const Home = () => {
       );
    
       setUrls(response.data);
+
+      // Verifica se o usuário atingiu o limite de URLs para o plano básico
+      if (usuario?.plano === "BASICO" && response.data.length >= 1) {
+        setLimiteAtingido(true);
+      }
 
       const intervalosIniciais = response.data.reduce((acc, monitor) => {
         acc[monitor.id] = monitor.intervalo || 1;
@@ -95,6 +101,12 @@ const Home = () => {
   const handleAddUrl = async () => {
     if (!url) {
       setMensagem("Por favor, insira uma URL válida.");
+      return;
+    }
+
+    // Verifica se o usuário com plano básico já atingiu o limite
+    if (usuario?.plano === "BASICO" && urls.length >= 1) {
+      setMensagem("Você atingiu o limite de URLs para o seu plano. Faça upgrade para adicionar mais URLs.");
       return;
     }
 
@@ -247,6 +259,26 @@ const handleMonitoramento = async (monitor, action) => {
               <FaGlobe className="mr-2 text-blue-600" /> Adicionar novo site para monitoramento
             </h2>
             
+            {limiteAtingido && usuario?.plano === "BASICO" ? (
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+                <div className="flex items-start">
+                  <FaExclamationTriangle className="text-yellow-500 mt-1 mr-3 flex-shrink-0" />
+                  <div>
+                    <h3 className="text-yellow-800 font-medium">Limite de URLs atingido</h3>
+                    <p className="text-yellow-700 mt-1">
+                      Seu plano básico permite monitorar apenas 1 URL. Faça upgrade para adicionar mais URLs.
+                    </p>
+                    <a 
+                      href="/planos-de-assinatura" 
+                      className="mt-3 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                    >
+                      Fazer upgrade
+                    </a>
+                  </div>
+                </div>
+              </div>
+            ) : null}
+            
             <div className="flex flex-col md:flex-row gap-4">
               <div className="flex-grow">
                 <div className="relative">
@@ -259,12 +291,18 @@ const handleMonitoramento = async (monitor, action) => {
                     placeholder="Digite a URL para monitorar (ex: exemplo.com)"
                     value={url}
                     onChange={(e) => setUrl(e.target.value)}
+                    disabled={limiteAtingido && usuario?.plano === "BASICO"}
                   />
                 </div>
               </div>
               <button
                 onClick={handleAddUrl}
-                className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center justify-center"
+                className={`flex items-center justify-center px-4 py-2 rounded-lg transition-colors ${
+                  limiteAtingido && usuario?.plano === "BASICO"
+                    ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                    : "bg-blue-600 hover:bg-blue-700 text-white"
+                }`}
+                disabled={limiteAtingido && usuario?.plano === "BASICO"}
               >
                 <FaPlus className="mr-2" /> Adicionar URL
               </button>
