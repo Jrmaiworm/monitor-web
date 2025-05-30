@@ -2,7 +2,8 @@
 import React from 'react';
 import { 
   FaChartLine, FaClock, FaPlay, FaStop, FaTrashAlt, FaInfoCircle,
-  FaBell, FaEnvelopeOpenText, FaTimesCircle // Ícones para notificação e desativado
+  FaBell, FaEnvelopeOpenText, FaTimesCircle, // Ícones para notificação e desativado
+  FaGlobe
 } from 'react-icons/fa';
 
 const MonitoredUrlsList = ({
