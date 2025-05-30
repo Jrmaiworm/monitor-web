@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { FaServer, FaBell, FaChartLine, FaCheck, FaTimes, FaClock, FaExclamationTriangle, FaShieldAlt, FaGlobe, FaUserClock, FaInfoCircle, FaEnvelope } from 'react-icons/fa';
-import api from '@/api/api';
+import api from '../../api/api';
 const URL ="https://biomob-api.com:3202/monitor-status/"
  const MeusSites = () => {
   const [usuario, setUsuario] = useState(null);
