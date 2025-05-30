@@ -1,6 +1,6 @@
 // components/AddUrlCard.js
 import React from 'react';
-import { FaGlobe, FaPlus, FaInfoCircle, FaExclamationTriangle } from 'react-icons/fa';
+import { FaGlobe, FaPlus, FaInfoCircle, FaExclamationTriangle, FaChartBar } from 'react-icons/fa';
 
 const AddUrlCard = ({
   url,
@@ -10,9 +10,11 @@ const AddUrlCard = ({
   usuario,
   limiteUrls,
   urls,
+  onShowGeneralReport, // Add this new prop
 }) => (
-  <div className="bg-white rounded-lg shadow-md overflow-hidden border border-gray-200">
-    <div className="p-6">
+  <div className="bg-white rounded-lg shadow-md overflow-hidden border border-gray-200 ">
+    {/* Conteúdo principal do card com padding */}
+    <div className="p-6 space-y-4 h-auto">
       <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center">
         <FaGlobe className="mr-2 text-blue-600" /> Adicionar novo site para monitoramento
       </h2>
@@ -65,7 +67,7 @@ const AddUrlCard = ({
           </div>
         </div>
       ) : null}
-      <div className="flex flex-col md:flex-row gap-4">
+      <div className="flex flex-col md:flex-row gap-4 mb-4"> {/* Added mb-4 for spacing */}
         <div className="flex-grow">
           <div className="relative">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -93,6 +95,14 @@ const AddUrlCard = ({
           <FaPlus className="mr-2" /> Adicionar URL
         </button>
       </div>
+
+      {/* Botão de Relatório Geral movido para o final do conteúdo principal do card */}
+      <button
+        onClick={onShowGeneralReport}
+        className="w-full flex items-center justify-center px-4 py-2 rounded-lg transition-colors bg-blue-600 hover:bg-blue-700 text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 mt-4"
+      >
+        <FaChartBar className="mr-2" /> Exibir Relatório Geral
+      </button>
     </div>
   </div>
 );

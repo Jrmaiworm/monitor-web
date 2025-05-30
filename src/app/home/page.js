@@ -10,6 +10,7 @@ import DeleteConfirmationModal from "./components/DeleteConfirmationModal";
 import MonitoringDetailsModal from "./components/MonitoringDetailsModal";
 import CtaSection from "./components/CtaSection";
 import ModalPopup from "../components/ModalPopup"; // Mantenha este se ainda for necessário
+import GeneralReportModal from "./components/GeneralReportModal"; // Import the new modal
 import api from "../../api/api"; // Certifique-se de que o caminho está correto
 
 const Home = () => {
@@ -22,15 +23,14 @@ const Home = () => {
   const [detalhesMonitoramento, setDetalhesMonitoramento] = useState([]);
   const [urlSelecionada, setUrlSelecionada] = useState("");
   const [historicoOffline, setHistoricoOffline] = useState([]);
-  const [porcentagemOnline, setPorcentagemOnline] = useState(0);
-  const [porcentagemOffline, setPorcentagemOffline] = useState(0);
+  const [porcentagemOnline, setPorcentagemOnline] = useState(0); // Pode ser removido se não for mais usado
+  const [porcentagemOffline, setPorcentagemOffline] = useState(0); // Pode ser removido se não for mais usado
   const [isLoading, setIsLoading] = useState(true);
   const [deletingId, setDeletingId] = useState(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [limiteAtingido, setLimiteAtingido] = useState(false);
   const [limiteUrls, setLimiteUrls] = useState(0);
 
-  // Novos estados para notificações
   const [notificacoes, setNotificacoes] = useState({
     email_notificacao1: "",
     email_notificacao2: "",
@@ -43,8 +43,14 @@ const Home = () => {
     contatosEmail: [],
   });
   const [newEmailContact, setNewEmailContact] = useState('');
-  // NOVO ESTADO: ID do monitor selecionado para configuração
   const [selectedMonitorId, setSelectedMonitorId] = useState(null);
+
+  // NOVO ESTADO para os dados de resumo de uptime
+  const [uptimeSummaryData, setUptimeSummaryData] = useState([]);
+
+  // NOVOS ESTADOS para o relatório geral
+  const [showGeneralReportModal, setShowGeneralReportModal] = useState(false);
+  const [generalReportData, setGeneralReportData] = useState(null);
 
 
   useEffect(() => {
@@ -64,10 +70,38 @@ const Home = () => {
       }
 
       fetchUrls(user.id);
+      fetchUptimeSummary(user.id); // CHAMA A NOVA FUNÇÃO AQUI
     } else {
       setIsLoading(false);
     }
   }, [usuario?.plano]);
+
+  // NOVA FUNÇÃO: Busca o resumo de uptime para o usuário
+  const fetchUptimeSummary = async (userId) => {
+    try {
+      const response = await api.get(`/monitor/uptime-summary/${userId}`);
+      setUptimeSummaryData(response.data);
+    } catch (error) {
+      console.error("Erro ao buscar resumo de uptime:", error);
+      setMensagem("Erro ao carregar dados de resumo de disponibilidade.");
+    }
+  };
+
+  // NOVA FUNÇÃO: Busca o relatório geral de URLs
+  const fetchGeneralReport = async (userId) => {
+    try {
+      setMensagem("Carregando relatório geral...");
+      const response = await api.get(`/monitor/report/${userId}`);
+      setGeneralReportData(response.data);
+      setShowGeneralReportModal(true);
+      setMensagem("");
+    } catch (error) {
+      console.error("Erro ao buscar relatório geral:", error);
+      setMensagem("Erro ao carregar o relatório geral.");
+      setGeneralReportData(null); // Limpa os dados em caso de erro
+    }
+  };
+
 
   const fetchUrls = async (userId) => {
     setIsLoading(true);
@@ -76,12 +110,11 @@ const Home = () => {
       setUrls(response.data);
 
       if (response.data.length > 0) {
-        // Define o primeiro monitor como selecionado por padrão
-        setSelectedMonitorId(response.data[0].id);
-        // Carrega as configurações de notificação do primeiro monitor
-        loadMonitorNotifications(response.data[0]);
+        const initialSelectedId = selectedMonitorId || response.data[0].id;
+        setSelectedMonitorId(initialSelectedId);
+        const initialSelectedMonitor = response.data.find(m => m.id === initialSelectedId) || response.data[0];
+        loadMonitorNotifications(initialSelectedMonitor);
       } else {
-        // Reseta as configurações se não houver URLs
         setSelectedMonitorId(null);
         resetNotificationSettings();
       }
@@ -109,7 +142,6 @@ const Home = () => {
     }
   };
 
-  // NOVA FUNÇÃO: Carrega as configurações de notificação de um monitor específico
   const loadMonitorNotifications = (monitor) => {
     setNotificacoes({
       email_notificacao1: monitor.email_notificacao1 || "",
@@ -126,11 +158,10 @@ const Home = () => {
         monitor.email_notificacao3,
         monitor.email_notificacao4,
         monitor.email_notificacao5,
-      ].filter(Boolean), // Filtra valores vazios para o array dinâmico
+      ].filter(Boolean),
     });
   };
 
-  // NOVA FUNÇÃO: Reseta as configurações de notificação para o estado inicial
   const resetNotificationSettings = () => {
     setNotificacoes({
       email_notificacao1: "",
@@ -146,10 +177,10 @@ const Home = () => {
     setNewEmailContact("");
   };
 
-
   const fetchDetalhesMonitoramento = async (monitor) => {
     try {
       setMensagem("Carregando detalhes...");
+      // A rota `/monitor-results` pode ser mantida para o histórico detalhado
       const response = await api.get(
         `/monitor-results?url=${monitor.url}&userId=${monitor.user_id}`
       );
@@ -157,20 +188,13 @@ const Home = () => {
       setDetalhesMonitoramento(response.data);
       setUrlSelecionada(monitor.url);
 
+      // Histórico offline ainda é útil para a tabela específica
       const historico = response.data.filter((detalhe) => detalhe.status === "offline");
       setHistoricoOffline(historico);
 
-      const total = response.data.length;
-      if (total > 0) {
-        const onlineCount = response.data.filter((detalhe) => detalhe.status === "online").length;
-        const offlineCount = total - onlineCount;
-
-        setPorcentagemOnline(((onlineCount / total) * 100).toFixed(2));
-        setPorcentagemOffline(((offlineCount / total) * 100).toFixed(2));
-      } else {
-        setPorcentagemOnline(0);
-        setPorcentagemOffline(0);
-      }
+      // As porcentagens `porcentagemOnline` e `porcentagemOffline` não são mais necessárias
+      // pois `uptimeSummaryData` já as fornece.
+      // Você pode removê-las se não houver outros usos.
 
       setDetalhesVisiveis(true);
       setMensagem("");
@@ -223,6 +247,9 @@ const Home = () => {
       setMensagem("URL adicionada com sucesso!");
       setUrl("");
       fetchUrls(usuario.id);
+      if (usuario?.id) { // Recarrega o resumo de uptime ao adicionar nova URL
+        fetchUptimeSummary(usuario.id);
+      }
     } catch (error) {
       setMensagem(`Erro ao adicionar a URL: ${error.message}`);
       console.error("Erro:", error);
@@ -247,6 +274,9 @@ const Home = () => {
       setConfirmDelete(false);
       setDeletingId(null);
       fetchUrls(usuario.id);
+      if (usuario?.id) { // Recarrega o resumo de uptime ao deletar URL
+        fetchUptimeSummary(usuario.id);
+      }
     } catch (error) {
       setMensagem("Erro ao excluir a URL.");
       console.error("Erro ao excluir:", error);
@@ -281,6 +311,9 @@ const Home = () => {
         `Monitoramento ${action === "start" ? "iniciado" : "parado"} com sucesso!`
       );
       fetchUrls(usuario.id);
+      if (usuario?.id) { // Recarrega o resumo de uptime
+        fetchUptimeSummary(usuario.id);
+      }
     } catch (error) {
       setMensagem(`Erro ao ${action === "start" ? "iniciar" : "parar"} o monitoramento.`);
       console.error("Erro no monitoramento:", error);
@@ -294,7 +327,6 @@ const Home = () => {
     setUrlSelecionada("");
   };
 
-  // Lógica para lidar com a seleção de um monitor no SettingsCard
   const handleMonitorSelectChange = (e) => {
     const selectedId = e.target.value;
     setSelectedMonitorId(selectedId);
@@ -305,7 +337,6 @@ const Home = () => {
       resetNotificationSettings();
     }
   };
-
 
   const handleUpdateNotifications = async () => {
     if (!selectedMonitorId) {
@@ -326,9 +357,6 @@ const Home = () => {
         falhas: notificacoes.falhas,
         relatorio_mensal: notificacoes.relatorio_mensal,
       };
-
-      // Adicione um log para verificar o body enviado
-      console.log("Enviando PUT para /monitor/", selectedMonitorId, "com body:", body);
       
       const response = await api.put(`/monitor/${selectedMonitorId}`, body);
 
@@ -337,13 +365,32 @@ const Home = () => {
       }
 
       setMensagem("Configurações de notificação salvas com sucesso!");
-      // Opcional: Atualize a lista de URLs para que as configurações salvas sejam refletidas
       fetchUrls(usuario.id);
+      if (usuario?.id) { // Recarrega o resumo de uptime e urls
+        fetchUptimeSummary(usuario.id);
+      }
     } catch (error) {
       setMensagem(`Erro ao salvar: ${error.message}`);
       console.error("Erro ao atualizar notificações:", error);
     }
   };
+
+  const handleCancelSettings = () => {
+    if (selectedMonitorId) {
+      const currentMonitor = urls.find(monitor => String(monitor.id) === String(selectedMonitorId));
+      if (currentMonitor) {
+        loadMonitorNotifications(currentMonitor);
+        setMensagem("Alterações nas configurações de notificação canceladas.");
+      } else {
+        resetNotificationSettings();
+        setMensagem("Configurações de notificação resetadas (URL não encontrada).");
+      }
+    } else {
+      resetNotificationSettings();
+      setMensagem("Configurações de notificação resetadas.");
+    }
+  };
+
 
   const handleAddEmailContact = () => {
     const trimmedEmail = newEmailContact.trim();
@@ -360,11 +407,13 @@ const Home = () => {
     }
   };
 
-  const handleRemoveEmailContact = (emailToRemove) => {
-    setNotificacoes(prev => ({
-      ...prev,
-      contatosEmail: prev.contatosEmail.filter(email => email !== emailToRemove)
-    }));
+  // Handler to open the general report modal
+  const handleShowGeneralReport = () => {
+    if (usuario?.id) {
+      fetchGeneralReport(usuario.id);
+    } else {
+      setMensagem("ID do usuário não disponível para buscar o relatório geral.");
+    }
   };
 
   return (
@@ -389,19 +438,20 @@ const Home = () => {
             usuario={usuario}
             limiteUrls={limiteUrls}
             urls={urls}
+            onShowGeneralReport={handleShowGeneralReport} // Pass the new handler
           />
           <SettingsCard
             notificacoes={notificacoes}
             setNotificacoes={setNotificacoes}
             handleUpdateNotifications={handleUpdateNotifications}
+            handleCancelSettings={handleCancelSettings}
             newEmailContact={newEmailContact}
             setNewEmailContact={setNewEmailContact}
             handleAddEmailContact={handleAddEmailContact}
-            handleRemoveEmailContact={handleRemoveEmailContact}
-            urls={urls} // Passa a lista de URLs para o select
-            selectedMonitorId={selectedMonitorId} // Passa o ID selecionado
-            handleMonitorSelectChange={handleMonitorSelectChange} // Passa a função de mudança
-            isLoadingUrls={isLoading} // Para desabilitar o select enquanto carrega
+            urls={urls}
+            selectedMonitorId={selectedMonitorId}
+            handleMonitorSelectChange={handleMonitorSelectChange}
+            isLoadingUrls={isLoading}
           />
         </div>
 
@@ -429,10 +479,18 @@ const Home = () => {
         detalhesVisiveis={detalhesVisiveis}
         fecharModal={fecharModalDetalhes}
         urlSelecionada={urlSelecionada}
-        porcentagemOnline={porcentagemOnline}
-        porcentagemOffline={porcentagemOffline}
         detalhesMonitoramento={detalhesMonitoramento}
         historicoOffline={historicoOffline}
+        uptimeSummaryData={uptimeSummaryData} // PASSA OS NOVOS DADOS
+        userId={usuario?.id} // PASSA O ID DO USUÁRIO
+      />
+
+      {/* NEW: General Report Modal */}
+      <GeneralReportModal
+        isVisible={showGeneralReportModal}
+        onClose={() => setShowGeneralReportModal(false)}
+        reportData={generalReportData}
+        userId={usuario?.id}
       />
 
       <ModalPopup mensagem={mensagem} onClose={() => setMensagem("")} />
