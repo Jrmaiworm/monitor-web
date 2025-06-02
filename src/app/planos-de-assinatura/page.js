@@ -1,287 +1,551 @@
-"use client"; // Marca o componente como Client Component
+// PlanosAssinatura.js
+"use client";
 
-import React from 'react';
+import React, { useState } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
-import { FaArrowLeft, FaCheck, FaTimes, FaCrown, FaRocket, FaStar } from 'react-icons/fa';
+import { useRouter } from 'next/navigation';
+import { FaArrowLeft, FaCheck, FaCrown, FaEnvelope, FaExclamationCircle, FaTimes, FaUser, FaCalendarAlt, FaCreditCard } from 'react-icons/fa';
+import { usePayment } from '../contexts/PaymentContext';
 
-const PlanosDeAssinatura = () => {
+const PlanosAssinatura = () => {
+  const router = useRouter();
+  const { setPaymentData } = usePayment();
+
+  const [possuiConta, setPossuiConta] = useState(null);
+  const [email, setEmail] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [showModal, setShowModal] = useState(false);
+  const [userData, setUserData] = useState(null);
+  const [emailVerificado, setEmailVerificado] = useState(false);
+
+  const planos = [
+    {
+      id: 'basico',
+      nome: 'Plano Básico',
+      preco: 'R$ 0,01',
+      periodo: '/mês',
+      descricao: 'Ideal para pequenos projetos',
+      recursos: [
+        'Até 5 sites monitorados',
+        'Verificação a cada 5 minutos',
+        'Alertas por email',
+        'Dashboard básico',
+        'Suporte por email'
+      ],
+      popular: false
+    },
+    {
+      id: 'avancado',
+      nome: 'Plano Premium',
+      preco: 'R$ 0,02',
+      periodo: '/mês',
+      descricao: 'Perfeito para empresas em crescimento',
+      recursos: [
+        'Até 25 sites monitorados',
+        'Verificação a cada 1 minuto',
+        'Alertas por email e SMS',
+        'Dashboard avançado',
+        'Relatórios detalhados',
+        'Suporte prioritário'
+      ],
+      popular: true
+    },
+    {
+      id: 'super',
+      nome: 'Plano Enterprise',
+      preco: 'R$ 0,03',
+      periodo: '/mês',
+      descricao: 'Para grandes empresas',
+      recursos: [
+        'Sites ilimitados',
+        'Verificação a cada 30 segundos',
+        'Alertas multi-canal',
+        'Dashboard personalizado',
+        'API completa',
+        'Suporte 24/7',
+        'Gerente de conta dedicado'
+      ],
+      popular: false
+    }
+  ];
+
+  const formatarDataExpiracao = (dataString) => {
+    try {
+      const data = new Date(dataString);
+      return data.toLocaleDateString('pt-BR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    } catch (error) {
+      return dataString;
+    }
+  };
+
+  const calcularDiasRestantes = (dataExpiracao) => {
+    if (!dataExpiracao) return null;
+    
+    try {
+      const hoje = new Date();
+      const dataExp = new Date(dataExpiracao);
+      const diferencaTempo = dataExp.getTime() - hoje.getTime();
+      const diasRestantes = Math.ceil(diferencaTempo / (1000 * 3600 * 24));
+      
+      return diasRestantes;
+    } catch (error) {
+      return null;
+    }
+  };
+
+  const isPlanoExpirado = (dataExpiracao) => {
+    if (!dataExpiracao) return true;
+    
+    const diasRestantes = calcularDiasRestantes(dataExpiracao);
+    return diasRestantes !== null && diasRestantes <= 0;
+  };
+
+  const getStatusPlano = (userData) => {
+    if (!userData || !userData.plano || userData.plano === 'Nenhum') {
+      return { status: 'sem_plano', mensagem: 'Nenhum plano ativo' };
+    }
+
+    const diasRestantes = calcularDiasRestantes(userData.data_expiracao);
+    
+    if (diasRestantes === null) {
+      return { status: 'sem_data', mensagem: 'Data de expiração não definida' };
+    }
+
+    if (diasRestantes <= 0) {
+      return { status: 'expirado', mensagem: 'Plano expirado' };
+    }
+
+    return { 
+      status: 'ativo', 
+      mensagem: `${diasRestantes} dia${diasRestantes === 1 ? '' : 's'} restante${diasRestantes === 1 ? '' : 's'}` 
+    };
+  };
+
+  const handleEmailCheck = async (e) => {
+    e.preventDefault();
+    setError('');
+    setIsLoading(true);
+
+    try {
+      const response = await fetch('https://biomob-api.com:3202/user-check-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ email })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        if (response.status === 404) {
+          setError('Email não encontrado. Você precisa criar uma conta primeiro.');
+        } else {
+          setError(data.error || 'Erro ao verificar email.');
+        }
+        return;
+      }
+
+      setUserData(data);
+      setEmailVerificado(true);
+      setShowModal(true);
+    } catch (error) {
+      setError('Erro de conexão. Tente novamente.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleGerarPagamento = (planoId) => {
+    console.log('planid', planoId)
+    if (userData) {
+      const planoParaEnvio = planos.find(p => p.id === planoId);
+      if (planoParaEnvio) {
+        setPaymentData({
+          userData: userData,
+          planoSelecionado: { id: planoId, ...planoParaEnvio }
+        });
+        router.push('/pagamento-pix');
+      }
+    }
+  };
+
+  const closeModal = () => {
+    setShowModal(false);
+  };
+
+  const resetForm = () => {
+    setPossuiConta(null);
+    setEmail('');
+    setError('');
+    setUserData(null);
+    setEmailVerificado(false);
+    setShowModal(false);
+  };
+
+  console.log('userdata', userData)
+
+  // Obter status do plano para exibição
+  const statusPlano = userData ? getStatusPlano(userData) : null;
+
   return (
     <div className="bg-white min-h-screen">
       <Head>
         <title>Planos de Assinatura | eYe Monitor</title>
-        <meta name="description" content="Conheça os planos de assinatura do eYe Monitor para monitoramento de websites 24/7" />
+        <meta name="description" content="Escolha o melhor plano para monitorar seus sites 24/7" />
       </Head>
-      
+
       <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
         {/* Header */}
-   
-        
+        <div className="mb-8">
+          <Link href="/" className="text-blue-600 hover:text-blue-800 flex items-center transition-colors duration-200">
+            <FaArrowLeft className="mr-2" /> Voltar para a página inicial
+          </Link>
+        </div>
+
         {/* Hero Section */}
-        <div className="bg-gradient-to-r from-blue-600 to-blue-500 rounded-xl shadow-lg p-8 mb-8">
+        <div className="bg-gradient-to-r from-blue-600 to-blue-500 rounded-xl shadow-lg p-8 mb-12">
           <div className="text-center">
             <h1 className="text-4xl font-bold text-white mb-4">
               Planos de Assinatura
             </h1>
             <p className="text-lg text-white opacity-90 mb-4 max-w-3xl mx-auto">
-              O eYe Monitor vigia seu site <strong>24 horas por dia, 7 dias por semana</strong>, 
-              alertando você imediatamente quando algo não estiver funcionando corretamente.
+              Escolha o plano ideal para suas necessidades e mantenha seus sites monitorados <strong>24 horas por dia</strong>.
             </p>
           </div>
         </div>
-        
-        {/* Descrição dos Planos */}
-        <div className="text-center max-w-3xl mx-auto mb-12">
-          <h2 className="text-2xl font-bold text-gray-800 mb-4">Escolha o plano ideal para suas necessidades</h2>
-          <p className="text-gray-600">
-            Oferecemos diferentes opções para atender desde pequenos sites até grandes plataformas empresariais.
-            Todos os planos incluem monitoramento 24/7 e alertas em tempo real.
-          </p>
-        </div>
-        
-        {/* Cards de Preços em vez de tabela */}
-        <div className="grid md:grid-cols-3 gap-8 mb-12">
-          {/* Plano Básico */}
-          <div className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-200 transition-transform hover:transform hover:scale-105">
-            <div className="bg-blue-50 p-6 text-center border-b border-gray-200">
-              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-blue-100 text-blue-600 mb-4">
-                <FaStar className="w-8 h-8" />
-              </div>
-              <h3 className="text-2xl font-bold text-gray-800">Básico</h3>
-              <div className="mt-4">
-                <span className="text-4xl font-bold text-blue-600">Grátis</span>
-              </div>
-              <p className="mt-2 text-sm text-gray-500">Perfeito para começar</p>
-            </div>
-            
-            <div className="p-6">
-              <ul className="space-y-4">
-                <li className="flex items-start">
-                  <FaCheck className="text-green-500 mt-1 mr-2 flex-shrink-0" />
-                  <span className="text-gray-700"><strong>1</strong> site monitorado</span>
-                </li>
-                <li className="flex items-start">
-                  <FaCheck className="text-green-500 mt-1 mr-2 flex-shrink-0" />
-                  <span className="text-gray-700">Intervalos de <strong>30/60 min.</strong></span>
-                </li>
-                <li className="flex items-start">
-                  <FaCheck className="text-green-500 mt-1 mr-2 flex-shrink-0" />
-                  <span className="text-gray-700">Relatórios online</span>
-                </li>
-                <li className="flex items-start">
-                  <FaCheck className="text-green-500 mt-1 mr-2 flex-shrink-0" />
-                  <span className="text-gray-700">Relatórios mensais por e-mail</span>
-                </li>
-                <li className="flex items-start">
-                  <FaCheck className="text-green-500 mt-1 mr-2 flex-shrink-0" />
-                  <span className="text-gray-700"><strong>1</strong> contato para alertas</span>
-                </li>
-                <li className="flex items-start">
-                  <FaCheck className="text-green-500 mt-1 mr-2 flex-shrink-0" />
-                  <span className="text-gray-700">Protocolos <strong>HTTP/HTTPS</strong></span>
-                </li>
-              </ul>
-              
-              <div className="mt-14">
-                <button className="w-full py-3 px-4 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium transition duration-200">
-                  Começar Agora
+
+        {/* Verificação de Conta */}
+        {possuiConta === null && (
+          <div className="max-w-2xl mx-auto mb-12">
+            <div className="bg-white rounded-lg shadow-md border border-gray-200 p-8">
+              <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">
+                Você já possui uma conta?
+              </h2>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <button
+                  onClick={() => setPossuiConta(false)}
+                  className="px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition duration-200"
+                >
+                  Não, quero criar uma conta
+                </button>
+                <button
+                  onClick={() => setPossuiConta(true)}
+                  className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition duration-200"
+                >
+                  Sim, já tenho conta
                 </button>
               </div>
             </div>
           </div>
-          
-          {/* Plano Avançado */}
-          <div className="bg-white rounded-xl shadow-md overflow-hidden border border-blue-200 transition-transform hover:transform hover:scale-105 relative">
-            <div className="absolute top-0 right-0 bg-blue-600 text-white text-xs font-bold px-3 py-1 rounded-bl-lg">
-              POPULAR
+        )}
+
+        {/* Formulário para usuários existentes */}
+        {possuiConta === true && !emailVerificado && (
+          <div className="max-w-md mx-auto mb-12">
+            <div className="bg-white rounded-lg shadow-md border border-gray-200 p-8">
+              <h3 className="text-xl font-bold text-gray-800 mb-4">
+                Informe seu email cadastrado
+              </h3>
+
+              {error && (
+                <div className="mb-4 p-4 rounded-lg bg-red-50 text-red-700 border border-red-200">
+                  <p className="flex items-center">
+                    <FaExclamationCircle className="mr-2" />
+                    {error}
+                  </p>
+                </div>
+              )}
+
+              <form onSubmit={handleEmailCheck} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    E-mail
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <FaEnvelope className="text-gray-400" />
+                    </div>
+                    <input
+                      type="email"
+                      className="text-gray-700 w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="seu@email.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="flex gap-3">
+                  <button
+                    type="submit"
+                    className="flex-1 py-2 px-4 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium transition duration-200 flex items-center justify-center disabled:opacity-50"
+                    disabled={isLoading}
+                  >
+                    {isLoading ? (
+                      <>
+                        <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Verificando...
+                      </>
+                    ) : 'Verificar Email'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={resetForm}
+                    className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition duration-200"
+                  >
+                    Voltar
+                  </button>
+                </div>
+              </form>
             </div>
-            <div className="bg-blue-50 p-6 text-center border-b border-blue-200">
-              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-blue-100 text-blue-600 mb-4">
-                <FaRocket className="w-8 h-8" />
+          </div>
+        )}
+
+        {/* Informações da conta verificada */}
+        {emailVerificado && userData && (
+          <div className="max-w-md mx-auto mb-8">
+            <div className={`border rounded-lg p-6 ${
+              statusPlano?.status === 'expirado' || statusPlano?.status === 'sem_plano' 
+                ? 'bg-red-50 border-red-200' 
+                : 'bg-green-50 border-green-200'
+            }`}>
+              <div className="flex items-center mb-4">
+                <FaCheck className={`mr-3 ${
+                  statusPlano?.status === 'expirado' || statusPlano?.status === 'sem_plano' 
+                    ? 'text-red-500' 
+                    : 'text-green-500'
+                }`} />
+                <h3 className={`text-lg font-semibold ${
+                  statusPlano?.status === 'expirado' || statusPlano?.status === 'sem_plano' 
+                    ? 'text-red-800' 
+                    : 'text-green-800'
+                }`}>
+                  Email verificado com sucesso!
+                </h3>
               </div>
-              <h3 className="text-2xl font-bold text-gray-800">Avançado</h3>
-              <div className="mt-4">
-                <span className="text-4xl font-bold text-blue-600">R$ 4,90</span>
-                <span className="text-gray-500 ml-1">/mês</span>
+              <div className={`space-y-2 text-sm ${
+                statusPlano?.status === 'expirado' || statusPlano?.status === 'sem_plano' 
+                  ? 'text-red-700' 
+                  : 'text-green-700'
+              }`}>
+                <p><strong>Nome:</strong> {userData.nome}</p>
+                <p><strong>Email:</strong> {userData.email}</p>
+                <p><strong>Plano Atual:</strong> {userData.plano || 'Nenhum'}</p>
+                {statusPlano && (
+                  <p><strong>Status:</strong> {statusPlano.mensagem}</p>
+                )}
+                {userData.data_expiracao && (
+                  <p><strong>Data de Expiração:</strong> {formatarDataExpiracao(userData.data_expiracao)}</p>
+                )}
               </div>
-              <p className="mt-2 text-sm text-gray-500">Para sites profissionais</p>
-            </div>
-            
-            <div className="p-6">
-              <ul className="space-y-4">
-                <li className="flex items-start">
-                  <FaCheck className="text-green-500 mt-1 mr-2 flex-shrink-0" />
-                  <span className="text-gray-700"><strong>3</strong> sites monitorados</span>
-                </li>
-                <li className="flex items-start">
-                  <FaCheck className="text-green-500 mt-1 mr-2 flex-shrink-0" />
-                  <span className="text-gray-700">Intervalos de <strong>30/60 min.</strong></span>
-                </li>
-                <li className="flex items-start">
-                  <FaCheck className="text-green-500 mt-1 mr-2 flex-shrink-0" />
-                  <span className="text-gray-700">Relatórios online completos</span>
-                </li>
-                <li className="flex items-start">
-                  <FaCheck className="text-green-500 mt-1 mr-2 flex-shrink-0" />
-                  <span className="text-gray-700">Relatórios mensais por e-mail</span>
-                </li>
-                <li className="flex items-start">
-                  <FaCheck className="text-green-500 mt-1 mr-2 flex-shrink-0" />
-                  <span className="text-gray-700"><strong>3</strong> contatos para alertas</span>
-                </li>
-                <li className="flex items-start">
-                  <FaCheck className="text-green-500 mt-1 mr-2 flex-shrink-0" />
-                  <span className="text-gray-700">Protocolos <strong>HTTP/SMTP/POP3/FTP/HTTPS</strong></span>
-                </li>
-              </ul>
-              
-              <div className="mt-8">
-                <button className="w-full py-3 px-4 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium transition duration-200">
-                  Assinar Agora
+              <div className="flex gap-3 pt-3">
+                <button
+                  onClick={closeModal}
+                  className="flex-1 py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition duration-200"
+                >
+                  {statusPlano?.status === 'expirado' || statusPlano?.status === 'sem_plano' || statusPlano?.status === 'sem_data'
+                    ? 'Escolher Plano'
+                    : 'Atualizar Plano'
+                  }
                 </button>
               </div>
             </div>
           </div>
-          
-          {/* Plano Super */}
-          <div className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-200 transition-transform hover:transform hover:scale-105">
-            <div className="bg-blue-50 p-6 text-center border-b border-gray-200">
-              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-blue-100 text-blue-600 mb-4">
-                <FaCrown className="w-8 h-8" />
-              </div>
-              <h3 className="text-2xl font-bold text-gray-800">Super</h3>
-              <div className="mt-4">
-                <span className="text-4xl font-bold text-blue-600">R$ 9,90</span>
-                <span className="text-gray-500 ml-1">/mês</span>
-              </div>
-              <p className="mt-2 text-sm text-gray-500">Para múltiplos sites</p>
-            </div>
-            
-            <div className="p-6">
-              <ul className="space-y-4">
-                <li className="flex items-start">
-                  <FaCheck className="text-green-500 mt-1 mr-2 flex-shrink-0" />
-                  <span className="text-gray-700"><strong>10</strong> sites monitorados</span>
-                </li>
-                <li className="flex items-start">
-                  <FaCheck className="text-green-500 mt-1 mr-2 flex-shrink-0" />
-                  <span className="text-gray-700">Intervalos de <strong>5/15 min.</strong></span>
-                </li>
-                <li className="flex items-start">
-                  <FaCheck className="text-green-500 mt-1 mr-2 flex-shrink-0" />
-                  <span className="text-gray-700">Relatórios online detalhados</span>
-                </li>
-                <li className="flex items-start">
-                  <FaCheck className="text-green-500 mt-1 mr-2 flex-shrink-0" />
-                  <span className="text-gray-700">Relatórios mensais por e-mail</span>
-                </li>
-                <li className="flex items-start">
-                  <FaCheck className="text-green-500 mt-1 mr-2 flex-shrink-0" />
-                  <span className="text-gray-700"><strong>5</strong> contatos para alertas</span>
-                </li>
-                <li className="flex items-start">
-                  <FaCheck className="text-green-500 mt-1 mr-2 flex-shrink-0" />
-                  <span className="text-gray-700">Protocolos <strong>HTTP/SMTP/POP3/FTP/HTTPS/DNS</strong></span>
-                </li>
-              </ul>
-              
-              <div className="mt-8">
-                <button className="w-full py-3 px-4 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium transition duration-200">
-                  Assinar Agora
+        )}
+
+        {/* Botão para criar conta */}
+        {possuiConta === false && (
+          <div className="max-w-md mx-auto mb-12">
+            <div className="bg-white rounded-lg shadow-md border border-gray-200 p-8 text-center">
+              <h3 className="text-xl font-bold text-gray-800 mb-4">
+                Crie sua conta gratuita
+              </h3>
+              <p className="text-gray-600 mb-6">
+                Primeiro você precisa criar uma conta para depois escolher seu plano.
+              </p>
+              <div className="flex gap-3">
+                <Link
+                  href="/crie-sua-conta"
+                  className="flex-1 py-2 px-4 rounded-lg bg-green-600 hover:bg-green-700 text-white font-medium transition duration-200 text-center"
+                >
+                  Criar Conta Gratuita
+                </Link>
+                <button
+                  onClick={resetForm}
+                  className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition duration-200"
+                >
+                  Voltar
                 </button>
               </div>
             </div>
           </div>
-        </div>
-        
-        {/* Tabela de Comparação - Mobile Friendly */}
-        <div className="bg-white rounded-lg shadow-md overflow-hidden border border-gray-200 mb-8">
-          <h3 className="bg-blue-50 p-4 text-lg font-bold text-blue-800 border-b border-gray-200">
-            Comparativo de Planos
-          </h3>
-          
-          <div className="overflow-x-auto">
-            <table className="min-w-full">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Recursos</th>
-                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Básico</th>
-                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Avançado</th>
-                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Super</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                <tr>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Sites monitorados</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 text-center">1</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 text-center">3</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 text-center">10</td>
-                </tr>
-                <tr>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Intervalos de monitoramento</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 text-center">30/60 min.</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 text-center">30/60 min.</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 text-center">5/15 min.</td>
-                </tr>
-                <tr>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Relatórios online</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 text-center">
-                    <FaCheck className="text-green-500 mx-auto" />
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 text-center">
-                    <FaCheck className="text-green-500 mx-auto" />
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 text-center">
-                    <FaCheck className="text-green-500 mx-auto" />
-                  </td>
-                </tr>
-                <tr>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Relatórios por e-mail</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 text-center">Mensal</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 text-center">Mensal</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 text-center">Mensal</td>
-                </tr>
-                <tr>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Contatos para alertas</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 text-center">1</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 text-center">3</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 text-center">5</td>
-                </tr>
-                <tr>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Protocolos suportados</td>
-                  <td className="px-6 py-4 text-sm text-gray-700 text-center">HTTP/HTTPS</td>
-                  <td className="px-6 py-4 text-sm text-gray-700 text-center">HTTP/SMTP/POP3/FTP/HTTPS</td>
-                  <td className="px-6 py-4 text-sm text-gray-700 text-center">HTTP/SMTP/POP3/FTP/HTTPS/DNS</td>
-                </tr>
-                <tr className="bg-blue-50">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-blue-800">Preço</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-blue-700 text-center">Grátis</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-blue-700 text-center">R$ 4,90 /mês</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-blue-700 text-center">R$ 9,90 /mês</td>
-                </tr>
-              </tbody>
-            </table>
+        )}
+
+        {/* Planos - Visíveis sempre, mas habilitados apenas quando necessário */}
+        {(possuiConta === null || possuiConta === false || emailVerificado) && (
+          <div className="grid md:grid-cols-3 gap-8 mb-12">
+            {planos.map((plano) => (
+              <div
+                key={plano.id}
+                className={`relative bg-white rounded-xl shadow-lg border-2 ${plano.popular ? 'border-blue-500' : 'border-gray-200'} overflow-hidden
+                           transition-all duration-300 hover:shadow-xl hover:scale-[1.01]`}
+              >
+                {plano.popular && (
+                  <div className="absolute top-0 left-0 right-0 bg-blue-500 text-white text-center py-2 text-sm font-medium">
+                    <FaCrown className="inline mr-1" /> Mais Popular
+                  </div>
+                )}
+
+                <div className={`p-8 ${plano.popular ? 'pt-16' : ''}`}>
+                  <h3 className="text-2xl font-bold text-gray-800 mb-2">{plano.nome}</h3>
+                  <p className="text-gray-600 mb-4">{plano.descricao}</p>
+
+                  <div className="mb-6">
+                    <span className="text-3xl font-bold text-blue-600">{plano.preco}</span>
+                    <span className="text-gray-500">{plano.periodo}</span>
+                  </div>
+
+                  <ul className="space-y-3 mb-8">
+                    {plano.recursos.map((recurso, index) => (
+                      <li key={index} className="flex items-start">
+                        <FaCheck className="text-green-500 mr-3 mt-1 flex-shrink-0" />
+                        <span className="text-gray-700">{recurso}</span>
+                      </li>
+                    ))}
+                  </ul>
+
+                  <button
+                    onClick={() => {
+                      if (possuiConta === false) {
+                        router.push('/crie-sua-conta');
+                      } else if (emailVerificado && userData) {
+                        handleGerarPagamento(plano.id);
+                      }
+                    }}
+                    className={`w-full py-3 px-6 rounded-lg font-medium transition duration-200 ${
+                      plano.popular
+                        ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                        : 'bg-blue-500 hover:bg-blue-600 text-white'
+                    } ${(!emailVerificado && possuiConta !== false) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    disabled={!emailVerificado && possuiConta !== false}
+                  >
+                    {possuiConta === false
+                      ? 'Criar Conta e Escolher Plano'
+                      : emailVerificado
+                        ? (statusPlano?.status === 'expirado' || statusPlano?.status === 'sem_plano' || statusPlano?.status === 'sem_data'
+                            ? 'Escolher Plano'
+                            : 'Atualizar Plano')
+                        : 'Verifique seu email primeiro'
+                    }
+                  </button>
+                </div>
+              </div>
+            ))}
           </div>
-        </div>
-        
-        {/* FAQ ou Informações Adicionais */}
-        <div className="bg-blue-50 border border-blue-100 rounded-lg p-8 text-center">
-          <h2 className="text-2xl font-bold text-blue-800 mb-4">Tem dúvidas sobre nossos planos?</h2>
-          <p className="text-lg text-blue-700 mb-6">
-            Nossa equipe está pronta para ajudar você a escolher o plano mais adequado às suas necessidades.
-          </p>
-          <div className="flex flex-col sm:flex-row justify-center gap-4">
-            <Link href="/fale-conosco" className="bg-white hover:bg-gray-50 text-blue-600 border border-blue-200 font-bold py-3 px-8 rounded-lg transition-colors duration-200">
-              Fale Conosco
-            </Link>
-            <Link href="/faq" className="bg-white hover:bg-gray-50 text-blue-600 border border-blue-200 font-bold py-3 px-8 rounded-lg transition-colors duration-200">
-              Perguntas Frequentes
-            </Link>
+        )}
+
+        {/* Modal de dados do usuário */}
+        {showModal && userData && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
+              <div className="p-6 text-gray-800">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-xl font-bold text-gray-800">Dados da Conta</h3>
+                  <button
+                    onClick={closeModal}
+                    className="text-gray-400 hover:text-gray-600"
+                  >
+                    <FaTimes />
+                  </button>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="flex items-center">
+                    <FaUser className="text-blue-500 mr-3" />
+                    <div>
+                      <p className="text-sm text-gray-600">Nome</p>
+                      <p className="font-medium">{userData.nome}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center">
+                    <FaEnvelope className="text-blue-500 mr-3" />
+                    <div>
+                      <p className="text-sm text-gray-600">Email</p>
+                      <p className="font-medium">{userData.email}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center">
+                    <FaCrown className="text-blue-500 mr-3" />
+                    <div>
+                      <p className="text-sm text-gray-600">Plano Atual</p>
+                      <p className="font-medium">{userData.plano || 'Nenhum'}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center">
+                    <FaCalendarAlt className="text-blue-500 mr-3" />
+                    <div>
+                      <p className="text-sm text-gray-600">Data de Expiração</p>
+                      <p className="font-medium">
+                        {userData.data_expiracao ? formatarDataExpiracao(userData.data_expiracao) : 'Não definida'}
+                      </p>
+                    </div>
+                  </div>
+
+                  {statusPlano && (
+                    <div className={`p-3 rounded-lg ${
+                      statusPlano.status === 'expirado' || statusPlano.status === 'sem_plano' 
+                        ? 'bg-red-50 text-red-700 border border-red-200' 
+                        : 'bg-green-50 text-green-700 border border-green-200'
+                    }`}>
+                      <p className="font-medium text-center">
+                        Status: {statusPlano.mensagem}
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                <div className="mt-6 pt-4 border-t border-gray-200">
+                  <p className="text-sm text-gray-600 mb-4 text-center">
+                    {statusPlano?.status === 'expirado' || statusPlano?.status === 'sem_plano' || statusPlano?.status === 'sem_data'
+                      ? 'Escolha um plano para continuar usando nossos serviços.'
+                      : 'Você pode atualizar seu plano a qualquer momento.'
+                    }
+                  </p>
+                  <div className="flex justify-center">
+                    <button
+                      onClick={closeModal}
+                      className="py-2 px-6 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition duration-200"
+                    >
+                      {statusPlano?.status === 'expirado' || statusPlano?.status === 'sem_plano' || statusPlano?.status === 'sem_data'
+                        ? 'Escolher Plano'
+                        : 'Atualizar Plano'
+                      }
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
 };
 
-export default PlanosDeAssinatura;
+export default PlanosAssinatura;

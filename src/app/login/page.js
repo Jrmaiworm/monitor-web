@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Head from 'next/head';
 import Link from 'next/link';
-import { FaEnvelope, FaLock, FaEye, FaEyeSlash, FaArrowLeft, FaExclamationCircle } from 'react-icons/fa';
+import { FaEnvelope, FaLock, FaEye, FaEyeSlash, FaArrowLeft, FaExclamationCircle, FaExclamationTriangle } from 'react-icons/fa';
 
 const Login = () => {
   const [formData, setFormData] = useState({
@@ -12,6 +12,7 @@ const Login = () => {
     senha: ''
   });
   const [error, setError] = useState('');
+  const [errorType, setErrorType] = useState(''); // Para distinguir tipo de erro
   const [isLoading, setIsLoading] = useState(false);
   const [mostrarSenha, setMostrarSenha] = useState(false);
   const router = useRouter();
@@ -24,9 +25,25 @@ const Login = () => {
     });
   };
 
+  const formatarDataExpiracao = (dataString) => {
+    try {
+      const data = new Date(dataString);
+      return data.toLocaleDateString('pt-BR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    } catch (error) {
+      return dataString;
+    }
+  };
+
   const handleLogin = async (e) => {
     e.preventDefault();
     setError('');
+    setErrorType('');
     setIsLoading(true);
     
     try {
@@ -44,13 +61,39 @@ const Login = () => {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || 'Credenciais inválidas. Verifique seu e-mail e senha.');
+        // Verificar se é erro de conta expirada
+        if (response.status === 403) {
+          setErrorType('expired');
+          const dataExpiracao = data.data_expiracao ? 
+            `Sua conta expirou em ${formatarDataExpiracao(data.data_expiracao)}.` : 
+            'Sua conta expirou.';
+          setError(`${dataExpiracao} Acesse a área de planos para renovar sua assinatura.`);
+        } else {
+          setErrorType('general');
+          setError(data.error || data.message || 'Credenciais inválidas. Verifique seu e-mail e senha.');
+        }
+        return;
       }
       
       // Persistir dados no localStorage
       localStorage.setItem('user', JSON.stringify(data));
 
       console.log('Login bem-sucedido:', data);
+      
+      // Verificar se a conta está próxima do vencimento (30 dias)
+      if (data.data_expiracao) {
+        const dataExpiracao = new Date(data.data_expiracao);
+        const dataAtual = new Date();
+        const diasRestantes = Math.ceil((dataExpiracao - dataAtual) / (1000 * 60 * 60 * 24));
+        
+        if (diasRestantes <= 30 && diasRestantes > 0) {
+          // Armazenar aviso de vencimento para mostrar no dashboard
+          localStorage.setItem('avisoVencimento', JSON.stringify({
+            diasRestantes,
+            dataExpiracao: data.data_expiracao
+          }));
+        }
+      }
       
       // Garantir o redirecionamento usando window.location como backup
       try {
@@ -59,7 +102,8 @@ const Login = () => {
         window.location.href = '/home';
       }
     } catch (error) {
-      setError(error.message || 'Falha ao fazer login. Verifique suas credenciais.');
+      setErrorType('general');
+      setError('Falha ao fazer login. Verifique sua conexão e tente novamente.');
       console.error('Erro:', error);
     } finally {
       setIsLoading(false);
@@ -102,11 +146,32 @@ const Login = () => {
             </div>
             
             {error && (
-              <div className="mb-6 p-4 rounded-lg bg-red-50 text-red-700 border border-red-200">
-                <p className="flex items-center">
-                  <FaExclamationCircle className="mr-2" />
-                  {error}
+              <div className={`mb-6 p-4 rounded-lg border ${
+                errorType === 'expired' 
+                  ? 'bg-orange-50 text-orange-800 border-orange-200' 
+                  : 'bg-red-50 text-red-700 border-red-200'
+              }`}>
+                <p className="flex items-start">
+                  {errorType === 'expired' ? (
+                    <FaExclamationTriangle className="mr-2 mt-0.5 flex-shrink-0" />
+                  ) : (
+                    <FaExclamationCircle className="mr-2 mt-0.5 flex-shrink-0" />
+                  )}
+                  <span>{error}</span>
                 </p>
+                {errorType === 'expired' && (
+                  <div className="mt-3 pt-3 border-t border-orange-200">
+                    <p className="text-sm mb-3">
+                      <strong>Para renovar sua conta:</strong>
+                    </p>
+                    <Link 
+                      href="/planos-de-assinatura" 
+                      className="inline-block bg-orange-600 hover:bg-orange-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors duration-200"
+                    >
+                      Renovar Plano de Assinatura
+                    </Link>
+                  </div>
+                )}
               </div>
             )}
             
