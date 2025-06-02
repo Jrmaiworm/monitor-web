@@ -38,12 +38,12 @@ console.log('planoSelecionado', planoSelecionado)
     avancado: {
       nome: 'Plano Avançado',
       preco: 0.02, // NUMBER
-      precoFormatado: 'R$ 59,90'
+      precoFormatado: 'R$ 0,02'
     },
     super: {
       nome: 'Plano Super',
       preco: 0.03, // NUMBER
-      precoFormatado: 'R$ 99,90'
+      precoFormatado: 'R$ 0,03'
     }
   };
 
