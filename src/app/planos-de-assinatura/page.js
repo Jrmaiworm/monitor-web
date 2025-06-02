@@ -371,7 +371,7 @@ const PlanosAssinatura = () => {
           <div className="max-w-md mx-auto mb-12">
             <div className="bg-white rounded-lg shadow-md border border-gray-200 p-8 text-center">
               <h3 className="text-xl font-bold text-gray-800 mb-4">
-                Crie sua conta gratuita
+                Crie sua conta 
               </h3>
               <p className="text-gray-600 mb-6">
                 Primeiro você precisa criar uma conta para depois escolher seu plano.
@@ -381,7 +381,7 @@ const PlanosAssinatura = () => {
                   href="/crie-sua-conta"
                   className="flex-1 py-2 px-4 rounded-lg bg-green-600 hover:bg-green-700 text-white font-medium transition duration-200 text-center"
                 >
-                  Criar Conta Gratuita
+                  Criar Conta 
                 </Link>
                 <button
                   onClick={resetForm}
