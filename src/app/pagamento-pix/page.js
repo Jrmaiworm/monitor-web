@@ -119,10 +119,7 @@ console.log('planoSelecionado', planoSelecionado)
       setError('Nome é obrigatório');
       return false;
     }
-    if (!formData.last_name.trim()) {
-      setError('Sobrenome é obrigatório');
-      return false;
-    }
+
     if (!formData.email.trim()) {
       setError('Email é obrigatório');
       return false;
@@ -273,21 +270,7 @@ console.log('planoSelecionado', planoSelecionado)
                   </div>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Sobrenome *
-                  </label>
-                  <input
-                    disabled
-                    type="text"
-                    name="last_name"
-                    className="text-gray-700 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                    placeholder="Seu sobrenome"
-                    value={formData.last_name}
-                    onChange={handleInputChange}
-                    required
-                  />
-                </div>
+         
               </div>
 
               <div>
