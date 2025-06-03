@@ -19,13 +19,21 @@ const PlanosAssinatura = () => {
   const [showModal, setShowModal] = useState(false);
   const [userData, setUserData] = useState(null);
   const [emailVerificado, setEmailVerificado] = useState(false);
+  const [periodoSelecionado, setPeriodoSelecionado] = useState({
+    basico: 'mensal',
+    avancado: 'mensal', 
+    super: 'mensal'
+  });
 
   const planos = [
     {
       id: 'basico',
       nome: 'Plano Básico',
-      preco: 'R$ 2,9',
-      periodo: '/mês',
+      precos: {
+        mensal: { valor: 2.90, economia: null },
+        semestral: { valor: 14.90, economia: '14%', valorMensal: 2.48 },
+        anual: { valor: 29.90, economia: '14%', valorMensal: 2.49 }
+      },
       descricao: 'Ideal para pequenos projetos',
       recursos: [
         'Até 5 sites monitorados',
@@ -39,12 +47,15 @@ const PlanosAssinatura = () => {
     {
       id: 'avancado',
       nome: 'Plano Premium',
-      preco: 'R$ 4,90,',
-      periodo: '/mês',
+      precos: {
+        mensal: { valor: 4.90, economia: null },
+        semestral: { valor: 24.90, economia: '15%', valorMensal: 4.15 },
+        anual: { valor: 49.90, economia: '15%', valorMensal: 4.16 }
+      },
       descricao: 'Perfeito para empresas em crescimento',
       recursos: [
         'Até 10 sites monitorados',
-        'Verificação a cada 5 minuto',
+        'Verificação a cada 5 minutos',
         'Alertas por email e SMS',
         'Dashboard avançado',
         'Relatórios detalhados',
@@ -55,8 +66,11 @@ const PlanosAssinatura = () => {
     {
       id: 'super',
       nome: 'Plano Enterprise',
-      preco: 'R$ 9,90',
-      periodo: '/mês',
+      precos: {
+        mensal: { valor: 9.90, economia: null },
+        semestral: { valor: 49.90, economia: '16%', valorMensal: 8.32 },
+        anual: { valor: 99.90, economia: '16%', valorMensal: 8.33 }
+      },
       descricao: 'Para grandes empresas',
       recursos: [
         'Até 20 sites monitorados',
@@ -164,14 +178,51 @@ const PlanosAssinatura = () => {
     }
   };
 
+  const handlePeriodoChange = (planoId, periodo) => {
+    setPeriodoSelecionado(prev => ({
+      ...prev,
+      [planoId]: periodo
+    }));
+  };
+
+  const getPrecoFormatado = (plano) => {
+    const periodo = periodoSelecionado[plano.id];
+    const precoInfo = plano.precos[periodo];
+    
+    if (periodo === 'mensal') {
+      return {
+        preco: `R$ ${precoInfo.valor.toFixed(2).replace('.', ',')}`,
+        periodo: '/mês',
+        economia: null
+      };
+    } else {
+      const totalFormatado = `R$ ${precoInfo.valor.toFixed(2).replace('.', ',')}`;
+      const mensalFormatado = `R$ ${precoInfo.valorMensal.toFixed(2).replace('.', ',')}`;
+      return {
+        preco: totalFormatado,
+        periodo: periodo === 'semestral' ? '/6 meses' : '/ano',
+        precoMensal: `${mensalFormatado}/mês`,
+        economia: precoInfo.economia
+      };
+    }
+  };
+
   const handleGerarPagamento = (planoId) => {
-    console.log('planid', planoId)
     if (userData) {
-      const planoParaEnvio = planos.find(p => p.id === planoId);
-      if (planoParaEnvio) {
+      const plano = planos.find(p => p.id === planoId);
+      const periodo = periodoSelecionado[planoId];
+      const precoInfo = plano.precos[periodo];
+      
+      if (plano) {
         setPaymentData({
           userData: userData,
-          planoSelecionado: { id: planoId, ...planoParaEnvio }
+          planoSelecionado: { 
+            id: planoId, 
+            ...plano,
+            periodoSelecionado: periodo,
+            valorFinal: precoInfo.valor,
+            descricaoCompleta: `${plano.nome} - ${periodo.charAt(0).toUpperCase() + periodo.slice(1)}`
+          }
         });
         router.push('/pagamento-pix');
       }
@@ -190,8 +241,6 @@ const PlanosAssinatura = () => {
     setEmailVerificado(false);
     setShowModal(false);
   };
-
-  console.log('userdata', userData)
 
   // Obter status do plano para exibição
   const statusPlano = userData ? getStatusPlano(userData) : null;
@@ -397,63 +446,107 @@ const PlanosAssinatura = () => {
         {/* Planos - Visíveis sempre, mas habilitados apenas quando necessário */}
         {(possuiConta === null || possuiConta === false || emailVerificado) && (
           <div className="grid md:grid-cols-3 gap-8 mb-12">
-            {planos.map((plano) => (
-              <div
-                key={plano.id}
-                className={`relative bg-white rounded-xl shadow-lg border-2 ${plano.popular ? 'border-blue-500' : 'border-gray-200'} overflow-hidden
-                           transition-all duration-300 hover:shadow-xl hover:scale-[1.01]`}
-              >
-                {plano.popular && (
-                  <div className="absolute top-0 left-0 right-0 bg-blue-500 text-white text-center py-2 text-sm font-medium">
-                    <FaCrown className="inline mr-1" /> Mais Popular
-                  </div>
-                )}
+            {planos.map((plano) => {
+              const precoInfo = getPrecoFormatado(plano);
+              
+              return (
+                <div
+                  key={plano.id}
+                  className={`relative bg-white rounded-xl shadow-lg border-2 ${plano.popular ? 'border-blue-500' : 'border-gray-200'} overflow-hidden
+                             transition-all duration-300 hover:shadow-xl hover:scale-[1.01]`}
+                >
+                  {plano.popular && (
+                    <div className="absolute top-0 left-0 right-0 bg-blue-500 text-white text-center py-2 text-sm font-medium">
+                      <FaCrown className="inline mr-1" /> Mais Popular
+                    </div>
+                  )}
 
-                <div className={`p-8 ${plano.popular ? 'pt-16' : ''}`}>
-                  <h3 className="text-2xl font-bold text-gray-800 mb-2">{plano.nome}</h3>
-                  <p className="text-gray-600 mb-4">{plano.descricao}</p>
+                  <div className={`p-8 ${plano.popular ? 'pt-16' : ''}`}>
+                    <h3 className="text-2xl font-bold text-gray-800 mb-2">{plano.nome}</h3>
+                    <p className="text-gray-600 mb-6">{plano.descricao}</p>
 
-                  <div className="mb-6">
-                    <span className="text-3xl font-bold text-blue-600">{plano.preco}</span>
-                    <span className="text-gray-500">{plano.periodo}</span>
-                  </div>
+                    {/* Seletor de Período */}
+                    <div className="mb-6">
+                      <label className="block text-sm font-medium text-gray-700 mb-3">
+                        Escolha o período:
+                      </label>
+                      <div className="grid grid-cols-3 gap-2">
+                        {['mensal', 'semestral', 'anual'].map((periodo) => (
+                          <button
+                            key={periodo}
+                            onClick={() => handlePeriodoChange(plano.id, periodo)}
+                            className={`px-3 py-2 text-xs font-medium rounded-lg border-2 transition-all duration-200 ${
+                              periodoSelecionado[plano.id] === periodo
+                                ? 'border-blue-500 bg-blue-50 text-blue-700'
+                                : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
+                            }`}
+                          >
+                            {periodo.charAt(0).toUpperCase() + periodo.slice(1)}
+                            {plano.precos[periodo].economia && (
+                              <div className="text-green-600 text-xs font-bold">
+                                -{plano.precos[periodo].economia}
+                              </div>
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
 
-                  <ul className="space-y-3 mb-8">
-                    {plano.recursos.map((recurso, index) => (
-                      <li key={index} className="flex items-start">
-                        <FaCheck className="text-green-500 mr-3 mt-1 flex-shrink-0" />
-                        <span className="text-gray-700">{recurso}</span>
-                      </li>
-                    ))}
-                  </ul>
+                    {/* Preço */}
+                    <div className="mb-6 text-center">
+                      <div className="text-3xl font-bold text-blue-600 mb-1">
+                        {precoInfo.preco}
+                        <span className="text-lg text-gray-500">{precoInfo.periodo}</span>
+                      </div>
+                      {precoInfo.precoMensal && (
+                        <div className="text-sm text-gray-600">
+                          Equivale a {precoInfo.precoMensal}
+                        </div>
+                      )}
+                      {precoInfo.economia && (
+                        <div className="inline-block mt-2 px-3 py-1 bg-green-100 text-green-700 text-sm font-medium rounded-full">
+                          Economia de {precoInfo.economia}
+                        </div>
+                      )}
+                    </div>
 
-                  <button
-                    onClick={() => {
-                      if (possuiConta === false) {
-                        router.push('/crie-sua-conta');
-                      } else if (emailVerificado && userData) {
-                        handleGerarPagamento(plano.id);
+                    <ul className="space-y-3 mb-8">
+                      {plano.recursos.map((recurso, index) => (
+                        <li key={index} className="flex items-start">
+                          <FaCheck className="text-green-500 mr-3 mt-1 flex-shrink-0" />
+                          <span className="text-gray-700">{recurso}</span>
+                        </li>
+                      ))}
+                    </ul>
+
+                    <button
+                      onClick={() => {
+                        if (possuiConta === false) {
+                          router.push('/crie-sua-conta');
+                        } else if (emailVerificado && userData) {
+                          handleGerarPagamento(plano.id);
+                        }
+                      }}
+                      className={`w-full py-3 px-6 rounded-lg font-medium transition duration-200 ${
+                        plano.popular
+                          ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                          : 'bg-blue-500 hover:bg-blue-600 text-white'
+                      } ${(!emailVerificado && possuiConta !== false) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      disabled={!emailVerificado && possuiConta !== false}
+                    >
+                      {possuiConta === false
+                        ? 'Criar Conta e Escolher Plano'
+                        : emailVerificado
+                          ? (statusPlano?.status === 'expirado' || statusPlano?.status === 'sem_plano' || statusPlano?.status === 'sem_data'
+                              ? 'Escolher Plano'
+                              : 'Atualizar Plano')
+                          : 'Verifique seu email primeiro'
                       }
-                    }}
-                    className={`w-full py-3 px-6 rounded-lg font-medium transition duration-200 ${
-                      plano.popular
-                        ? 'bg-blue-600 hover:bg-blue-700 text-white'
-                        : 'bg-blue-500 hover:bg-blue-600 text-white'
-                    } ${(!emailVerificado && possuiConta !== false) ? 'opacity-50 cursor-not-allowed' : ''}`}
-                    disabled={!emailVerificado && possuiConta !== false}
-                  >
-                    {possuiConta === false
-                      ? 'Criar Conta e Escolher Plano'
-                      : emailVerificado
-                        ? (statusPlano?.status === 'expirado' || statusPlano?.status === 'sem_plano' || statusPlano?.status === 'sem_data'
-                            ? 'Escolher Plano'
-                            : 'Atualizar Plano')
-                        : 'Verifique seu email primeiro'
-                    }
-                  </button>
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
 

@@ -29,54 +29,23 @@ console.log('planoSelecionado', planoSelecionado)
   const [error, setError] = useState('');
   const [pixCopied, setPixCopied] = useState(false);
 
-  const planosConfig = {
-    basico: {
-      nome: 'Plano Básico',
-      preco: 2.90, // NUMBER
-      precoFormatado: 'R$ 2,90'
-    },
-    avancado: {
-      nome: 'Plano Avançado',
-      preco: 4.90, // NUMBER
-      precoFormatado: 'R$ 4,90'
-    },
-    super: {
-      nome: 'Plano Super',
-      preco: 9.90, // NUMBER
-      precoFormatado: 'R$ 9,90'
-    }
-  };
-
   useEffect(() => {
     if (paymentData.userData && paymentData.planoSelecionado) {
       setUserData(paymentData.userData);
 
-      // --- CORREÇÃO AQUI NA MONTAGEM DO planoSelecionado ---
-      const basePlano = planosConfig[paymentData.planoSelecionado.id];
-      if (basePlano) {
-          const fullPlano = {
-              ...basePlano, // Começa com os dados do planosConfig (com preco numérico)
-              ...paymentData.planoSelecionado // Adiciona/sobrescreve com dados do contexto,
-                                              // mas vamos tratar o 'preco' para garantir que é número.
-          };
+      // Directly use the planoSelecionado from paymentData as it already contains the chosen period's value (valorFinal)
+      const selectedPlanFromContext = paymentData.planoSelecionado;
 
-          // Garante que 'preco' é um número, mesmo que venha como string do contexto
-          if (typeof fullPlano.preco === 'string') {
-              // Remove "R$", espaços e vírgulas e converte para float
-              fullPlano.preco = parseFloat(fullPlano.preco.replace('R$', '').replace(',', '.').trim());
-              // Se a conversão falhar, pode ser útil definir um fallback ou lançar um erro
-              if (isNaN(fullPlano.preco)) {
-                  console.warn("Erro ao converter preço do contexto para número. Usando preço padrão do config.");
-                  fullPlano.preco = planosConfig[paymentData.planoSelecionado.id].preco;
-              }
-          }
-          setPlanoSelecionado(fullPlano);
-      } else {
-          console.error("Plano selecionado do contexto não encontrado na configuração.");
-          router.push('/planos-de-assinatura'); // Redireciona se o plano for inválido
-      }
-      // --- FIM DA CORREÇÃO ---
+      // Format the valorFinal for display
+      const formattedPrice = `R$ ${selectedPlanFromContext.valorFinal.toFixed(2).replace('.', ',')}`;
 
+      setPlanoSelecionado({
+        ...selectedPlanFromContext,
+        precoFormatado: formattedPrice, // Add the formatted price for display
+        // Ensure 'preco' property is correctly valorFinal if it's used elsewhere for calculations
+        preco: selectedPlanFromContext.valorFinal // Ensure this is the numeric value for transaction
+      });
+      
       setFormData(prev => ({
         ...prev,
         email: paymentData.userData.email || '',
@@ -85,7 +54,7 @@ console.log('planoSelecionado', planoSelecionado)
         documento: paymentData.userData.documento || ''
       }));
     } else {
-      router.push('/planos-de-assinatura');
+      router.push('/planos-de-assinatura'); // Redirect if no plan data is available
     }
   }, [paymentData, router]);
 
@@ -156,15 +125,16 @@ console.log('planoSelecionado', planoSelecionado)
     try {
       const requestBody = {
         email: formData.email,
-        description: `Pagamento ${planoSelecionado.nome} - eYe Monitor`,
-        transaction_amount: planoSelecionado.preco, 
+        description: `Pagamento ${planoSelecionado.nome} - ${planoSelecionado.periodoSelecionado.charAt(0).toUpperCase() + planoSelecionado.periodoSelecionado.slice(1)} - eYe Monitor`,
+        transaction_amount: planoSelecionado.valorFinal, // Use valorFinal from context
         first_name: formData.first_name,
         documento: formData.documento.replace(/\D/g, ''), 
         last_name: formData.last_name,
-        tipo_plano: planoSelecionado.id 
+        tipo_plano: planoSelecionado.id,
+        periodo: planoSelecionado.periodoSelecionado // Pass the selected period
       };
 
-     
+      
 
       const response = await fetch('https://biomob-api.com:3202/payment-create-pix', {
         method: 'POST',
@@ -270,7 +240,7 @@ console.log('planoSelecionado', planoSelecionado)
                   </div>
                 </div>
 
-         
+          
               </div>
 
               <div>
@@ -383,12 +353,11 @@ console.log('planoSelecionado', planoSelecionado)
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-gray-600">Período:</span>
-                    <span className="font-medium text-gray-800">Mensal</span>
+                    <span className="font-medium text-gray-800">{planoSelecionado.periodoSelecionado.charAt(0).toUpperCase() + planoSelecionado.periodoSelecionado.slice(1)}</span>
                   </div>
                   <div className="border-t border-gray-200 pt-3">
                     <div className="flex justify-between items-center">
                       <span className="text-lg font-bold text-gray-800">Total:</span>
-                      {/* Aqui usamos planoSelecionado.precoFormatado para exibição, está correto */}
                       <span className="text-2xl font-bold text-green-600">{planoSelecionado.precoFormatado}</span>
                     </div>
                   </div>
