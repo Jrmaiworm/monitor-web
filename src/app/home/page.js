@@ -415,7 +415,7 @@ const Home = () => {
       setMensagem("ID do usuário não disponível para buscar o relatório geral.");
     }
   };
-
+console.log('usuario',usuario)
   return (
     <div className="bg-gray-50 min-h-screen">
       <Head>

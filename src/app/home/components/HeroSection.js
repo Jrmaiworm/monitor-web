@@ -1,6 +1,6 @@
 // components/HeroSection.js
 import React from 'react';
-
+import { formatarDataExpiracao } from '../../utils/formatData'; // 
 const HeroSection = ({ usuario }) => (
   <div className="bg-gradient-to-r from-blue-800 to-blue-600 rounded-xl shadow-lg p-8 mb-8">
     <div className="text-center">
@@ -14,6 +14,7 @@ const HeroSection = ({ usuario }) => (
           </p>
           <p className="text-sm opacity-80">{usuario.email}</p>
           <p className="text-sm opacity-80">Plano {usuario.plano}</p>
+             <p className="text-sm opacity-80">Data Expiração {formatarDataExpiracao(usuario.data_expiracao)}</p>
         </div>
       ) : (
         <p className="mb-4 text-white opacity-90">
