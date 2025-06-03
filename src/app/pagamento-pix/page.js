@@ -32,18 +32,18 @@ console.log('planoSelecionado', planoSelecionado)
   const planosConfig = {
     basico: {
       nome: 'Plano Básico',
-      preco: 0.01, // NUMBER
-      precoFormatado: 'R$ 0,01'
+      preco: 2.90, // NUMBER
+      precoFormatado: 'R$ 2,90'
     },
     avancado: {
       nome: 'Plano Avançado',
-      preco: 0.02, // NUMBER
-      precoFormatado: 'R$ 0,02'
+      preco: 4.90, // NUMBER
+      precoFormatado: 'R$ 4,90'
     },
     super: {
       nome: 'Plano Super',
-      preco: 0.03, // NUMBER
-      precoFormatado: 'R$ 0,03'
+      preco: 9.90, // NUMBER
+      precoFormatado: 'R$ 9,90'
     }
   };
 

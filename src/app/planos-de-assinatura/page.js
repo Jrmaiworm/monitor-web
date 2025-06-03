@@ -24,12 +24,12 @@ const PlanosAssinatura = () => {
     {
       id: 'basico',
       nome: 'Plano Básico',
-      preco: 'R$ 0,01',
+      preco: 'R$ 2,9',
       periodo: '/mês',
       descricao: 'Ideal para pequenos projetos',
       recursos: [
         'Até 5 sites monitorados',
-        'Verificação a cada 5 minutos',
+        'Verificação a cada 30 minutos',
         'Alertas por email',
         'Dashboard básico',
         'Suporte por email'
@@ -39,12 +39,12 @@ const PlanosAssinatura = () => {
     {
       id: 'avancado',
       nome: 'Plano Premium',
-      preco: 'R$ 0,02',
+      preco: 'R$ 4,90,',
       periodo: '/mês',
       descricao: 'Perfeito para empresas em crescimento',
       recursos: [
-        'Até 25 sites monitorados',
-        'Verificação a cada 1 minuto',
+        'Até 10 sites monitorados',
+        'Verificação a cada 5 minuto',
         'Alertas por email e SMS',
         'Dashboard avançado',
         'Relatórios detalhados',
@@ -55,12 +55,12 @@ const PlanosAssinatura = () => {
     {
       id: 'super',
       nome: 'Plano Enterprise',
-      preco: 'R$ 0,03',
+      preco: 'R$ 9,90',
       periodo: '/mês',
       descricao: 'Para grandes empresas',
       recursos: [
-        'Sites ilimitados',
-        'Verificação a cada 30 segundos',
+        'Até 20 sites monitorados',
+        'Verificação a cada 1 minuto',
         'Alertas multi-canal',
         'Dashboard personalizado',
         'API completa',

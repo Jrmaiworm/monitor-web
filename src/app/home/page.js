@@ -60,11 +60,11 @@ const Home = () => {
       setUsuario(user);
 
       if (user.plano === "BASICO") {
-        setLimiteUrls(1);
+        setLimiteUrls(5);
       } else if (user.plano === "AVANCADO") {
-        setLimiteUrls(3);
-      } else if (user.plano === "SUPER") {
         setLimiteUrls(10);
+      } else if (user.plano === "SUPER") {
+        setLimiteUrls(20);
       } else {
         setLimiteUrls(1);
       }
