@@ -240,7 +240,7 @@ const CriarConta = () => {
       setForcaSenha(calcularForcaSenha(value));
       
       // Validação em tempo real da senha
-      const senhaRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/;
+    const senhaRegex = /^(?=.*[A-Za-z])(?=.*\d)(?=.*\S)[A-Za-z\d\S]{8,}$/;
       if (value.length > 0 && !senhaRegex.test(value)) {
         setErrors({
           ...errors,
@@ -293,7 +293,7 @@ const CriarConta = () => {
     }
     
     // Validação de senha
-    const senhaRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/;
+   const senhaRegex = /^(?=.*[A-Za-z])(?=.*\d)(?=.*\S)[A-Za-z\d\S]{8,}$/;
     if (!senhaRegex.test(formData.senha)) {
       newErrors.senha = 'Senha deve ter pelo menos 8 caracteres, incluindo letras e números';
       valid = false;

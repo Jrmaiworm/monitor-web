@@ -1,12 +1,12 @@
 // PagamentoPix.js
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react'; // Adicionado useCallback
 import Head from 'next/head'; 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
-import { FaArrowLeft, FaCheck, FaCrown, FaEnvelope, FaExclamationCircle, FaTimes, FaUser, FaCalendarAlt, FaCreditCard, FaCopy } from 'react-icons/fa'; 
+import { FaArrowLeft, FaCheck, FaCrown, FaEnvelope, FaExclamationCircle, FaTimes, FaUser, FaCalendarAlt, FaCreditCard, FaCopy, FaTag } from 'react-icons/fa'; // Adicionado FaTag para o ícone do cupom
 
 import { usePayment } from '../contexts/PaymentContext';
 
@@ -16,7 +16,6 @@ const PagamentoPix = () => {
 
   const [userData, setUserData] = useState(null);
   const [planoSelecionado, setPlanoSelecionado] = useState(null);
-console.log('planoSelecionado', planoSelecionado)
   const [formData, setFormData] = useState({
     first_name: '',
     last_name: '',
@@ -29,21 +28,52 @@ console.log('planoSelecionado', planoSelecionado)
   const [error, setError] = useState('');
   const [pixCopied, setPixCopied] = useState(false);
 
+  // --- Novos estados para o Cupom ---
+  const [couponCode, setCouponCode] = useState('');
+  const [appliedCoupon, setAppliedCoupon] = useState(null); // Armazena os dados do cupom aplicado
+  const [couponError, setCouponError] = useState('');
+  const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
+  const [discountAmount, setDiscountAmount] = useState(0); // Valor do desconto calculado
+  const [finalPrice, setFinalPrice] = useState(0); // Preço final após o desconto
+  // --- Fim dos novos estados ---
+
+  // Função para formatar documento (mantida)
+  const formatarDocumento = (documento) => {
+    const numeros = documento.replace(/\D/g, '');
+    if (numeros.length <= 11) {
+      return numeros.replace(/^(\d{3})(\d{3})(\d{3})(\d{2})$/, '$1.$2.$3-$4');
+    }
+    return numeros;
+  };
+
+  // Calcula o preço final com base no plano selecionado e no cupom
+  const calculateFinalPrice = useCallback(() => {
+    if (!planoSelecionado) return;
+
+    let price = planoSelecionado.valorFinal;
+    let currentDiscount = 0;
+
+    if (appliedCoupon) {
+      if (appliedCoupon.type === 'percentage') {
+        currentDiscount = price * (appliedCoupon.value / 100);
+      } else if (appliedCoupon.type === 'fixed') {
+        currentDiscount = appliedCoupon.value;
+      }
+    }
+
+    const newFinalPrice = Math.max(0, price - currentDiscount); // Garante que o preço não seja negativo
+    setDiscountAmount(currentDiscount);
+    setFinalPrice(newFinalPrice);
+  }, [planoSelecionado, appliedCoupon]);
+
   useEffect(() => {
     if (paymentData.userData && paymentData.planoSelecionado) {
       setUserData(paymentData.userData);
-
-      // Directly use the planoSelecionado from paymentData as it already contains the chosen period's value (valorFinal)
       const selectedPlanFromContext = paymentData.planoSelecionado;
-
-      // Format the valorFinal for display
-      const formattedPrice = `R$ ${selectedPlanFromContext.valorFinal.toFixed(2).replace('.', ',')}`;
 
       setPlanoSelecionado({
         ...selectedPlanFromContext,
-        precoFormatado: formattedPrice, // Add the formatted price for display
-        // Ensure 'preco' property is correctly valorFinal if it's used elsewhere for calculations
-        preco: selectedPlanFromContext.valorFinal // Ensure this is the numeric value for transaction
+        preco: selectedPlanFromContext.valorFinal // O valor numérico original do plano
       });
       
       setFormData(prev => ({
@@ -58,20 +88,18 @@ console.log('planoSelecionado', planoSelecionado)
     }
   }, [paymentData, router]);
 
+  // Use useEffect para chamar calculateFinalPrice quando planoSelecionado ou appliedCoupon mudar
+  useEffect(() => {
+    calculateFinalPrice();
+  }, [planoSelecionado, appliedCoupon, calculateFinalPrice]);
+
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
       [name]: value
     }));
-  };
-
-  const formatarDocumento = (documento) => {
-    const numeros = documento.replace(/\D/g, '');
-    if (numeros.length <= 11) {
-      return numeros.replace(/^(\d{3})(\d{3})(\d{3})(\d{2})$/, '$1.$2.$3-$4');
-    }
-    return numeros;
   };
 
   const handleDocumentoChange = (e) => {
@@ -84,10 +112,16 @@ console.log('planoSelecionado', planoSelecionado)
   };
 
   const validarFormulario = () => {
+    // ... (sua validação existente)
     if (!formData.first_name.trim()) {
       setError('Nome é obrigatório');
       return false;
     }
+
+    // if (!formData.last_name.trim()) { // Removido: last_name pode ser vazio se for só 1 nome
+    //   setError('Sobrenome é obrigatório');
+    //   return false;
+    // }
 
     if (!formData.email.trim()) {
       setError('Email é obrigatório');
@@ -100,12 +134,55 @@ console.log('planoSelecionado', planoSelecionado)
 
     const documentoNumeros = formData.documento.replace(/\D/g, '');
     if (documentoNumeros.length !== 11) { 
-      setError('CPF deve ter 11 dígitos');
+      setError('CPF deve ter 11 dígitos.'); // Assumindo apenas CPF neste formulário
       return false;
     }
 
+    setError(''); // Limpa erros se a validação passar
     return true;
   };
+
+  // --- Nova função para aplicar o cupom ---
+  const handleApplyCoupon = async () => {
+    setCouponError('');
+    setAppliedCoupon(null); // Resetar cupom aplicado
+    setDiscountAmount(0); // Resetar desconto
+    
+    if (!couponCode.trim()) {
+      setCouponError('Por favor, digite um código de cupom.');
+      return;
+    }
+
+    setIsApplyingCoupon(true);
+    try {
+      const response = await fetch('https://biomob-api.com:3202/validate-coupon', { // Sua nova rota de API
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          couponCode: couponCode.trim(),
+          planoId: planoSelecionado?.id // Enviar ID do plano pode ser útil
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        setAppliedCoupon(data.coupon);
+        setCouponError('');
+        // calculateFinalPrice será chamado via useEffect devido à mudança em appliedCoupon
+      } else {
+        setCouponError(data.message || 'Erro ao aplicar cupom.');
+      }
+    } catch (error) {
+      console.error('Erro na validação do cupom:', error);
+      setCouponError('Não foi possível validar o cupom. Tente novamente.');
+    } finally {
+      setIsApplyingCoupon(false);
+    }
+  };
+  // --- Fim da nova função ---
 
   const handleGerarPix = async (e) => {
     e.preventDefault();
@@ -126,15 +203,19 @@ console.log('planoSelecionado', planoSelecionado)
       const requestBody = {
         email: formData.email,
         description: `Pagamento ${planoSelecionado.nome} - ${planoSelecionado.periodoSelecionado.charAt(0).toUpperCase() + planoSelecionado.periodoSelecionado.slice(1)} - eYe Monitor`,
-        transaction_amount: planoSelecionado.valorFinal, // Use valorFinal from context
+        transaction_amount: parseFloat(finalPrice.toFixed(2)), // Envia o preço final com desconto
         first_name: formData.first_name,
         documento: formData.documento.replace(/\D/g, ''), 
         last_name: formData.last_name,
         tipo_plano: planoSelecionado.id,
-        periodo: planoSelecionado.periodoSelecionado // Pass the selected period
+        periodo: planoSelecionado.periodoSelecionado, // Pass the selected period
+        // Adicionar informações do cupom ao payload, se houver
+        coupon_applied: appliedCoupon ? {
+          code: couponCode.trim(),
+          type: appliedCoupon.type,
+          value: appliedCoupon.value
+        } : undefined
       };
-
-      
 
       const response = await fetch('https://biomob-api.com:3202/payment-create-pix', {
         method: 'POST',
@@ -228,10 +309,11 @@ console.log('planoSelecionado', planoSelecionado)
                       <FaUser className="text-gray-400" />
                     </div>
                     <input
+                    // Alterado para disabled para evitar edição se já vier do contexto
                     disabled
                       type="text"
                       name="first_name"
-                      className="text-gray-700 w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                      className="text-gray-700 w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg bg-gray-100 cursor-not-allowed"
                       placeholder="Seu nome"
                       value={formData.first_name}
                       onChange={handleInputChange}
@@ -239,8 +321,26 @@ console.log('planoSelecionado', planoSelecionado)
                     />
                   </div>
                 </div>
-
-          
+                {/* Adicionado o campo de sobrenome */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Sobrenome
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <FaUser className="text-gray-400" />
+                    </div>
+                    <input
+                      disabled
+                      type="text"
+                      name="last_name"
+                      className="text-gray-700 w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg bg-gray-100 cursor-not-allowed"
+                      placeholder="Seu sobrenome"
+                      value={formData.last_name}
+                      onChange={handleInputChange}
+                    />
+                  </div>
+                </div>
               </div>
 
               <div>
@@ -255,7 +355,7 @@ console.log('planoSelecionado', planoSelecionado)
                     disabled
                     type="email"
                     name="email"
-                    className="text-gray-700 w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    className="text-gray-700 w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg bg-gray-100 cursor-not-allowed"
                     placeholder="seu@email.com"
                     value={formData.email}
                     onChange={handleInputChange}
@@ -276,15 +376,74 @@ console.log('planoSelecionado', planoSelecionado)
                     disabled
                     type="text"
                     name="documento"
-                    className="text-gray-700 w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    className="text-gray-700 w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg bg-gray-100 cursor-not-allowed"
                     placeholder="000.000.000-00"
                     value={formData.documento}
                     onChange={handleDocumentoChange}
-                    maxLength="14"
+                    maxLength="14" // MaxLength para CPF formatado
                     required
                   />
                 </div>
               </div>
+
+              {/* --- Campo de Cupom --- */}
+              <div className="pt-4 border-t border-gray-200">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Cupom de Desconto
+                </label>
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <FaTag className="text-gray-400" />
+                    </div>
+                    <input
+                      type="text"
+                      name="coupon"
+                      className="text-gray-700 w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="Insira seu cupom"
+                      value={couponCode}
+                      onChange={(e) => setCouponCode(e.target.value)}
+                      disabled={isApplyingCoupon || appliedCoupon} // Desabilita se estiver aplicando ou já aplicado
+                    />
+                  </div>
+                  {!appliedCoupon ? ( // Mostra botão "Aplicar" se não houver cupom aplicado
+                    <button
+                      type="button"
+                      onClick={handleApplyCoupon}
+                      className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium transition duration-200 flex items-center justify-center disabled:opacity-50"
+                      disabled={isApplyingCoupon || !couponCode.trim()}
+                    >
+                      {isApplyingCoupon ? (
+                        <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                      ) : (
+                        'Aplicar'
+                      )}
+                    </button>
+                  ) : ( // Mostra botão "Remover" se houver cupom aplicado
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setAppliedCoupon(null);
+                        setCouponCode('');
+                        setCouponError('');
+                        setDiscountAmount(0);
+                        // calculateFinalPrice será chamado via useEffect
+                      }}
+                      className="px-4 py-2 rounded-lg bg-red-500 hover:bg-red-600 text-white font-medium transition duration-200 flex items-center justify-center"
+                    >
+                      <FaTimes className="mr-2" /> Remover
+                    </button>
+                  )}
+                </div>
+                {couponError && <p className="mt-2 text-sm text-red-600 flex items-center"><FaExclamationCircle className="mr-1" /> {couponError}</p>}
+                {appliedCoupon && !couponError && (
+                  <p className="mt-2 text-sm text-green-600 flex items-center"><FaCheck className="mr-1" /> Cupom "{appliedCoupon.type === 'percentage' ? `${appliedCoupon.value}%` : `R$ ${appliedCoupon.value.toFixed(2).replace('.', ',')}`} de desconto" aplicado!</p>
+                )}
+              </div>
+              {/* --- Fim do Campo de Cupom --- */}
 
               <div className="pt-4 border-t border-gray-200">
                 <button
@@ -319,7 +478,7 @@ console.log('planoSelecionado', planoSelecionado)
                   <div className="flex items-center">
                     <FaUser className="text-blue-500 mr-3" />
                     <div>
-                      <p className="text-sm text-gray-600">Nome</p>
+                      <p className="text-sm text-gray-600">Nome Completo</p>
                       <p className="font-medium text-gray-800">{userData.nome}</p>
                     </div>
                   </div>
@@ -355,10 +514,26 @@ console.log('planoSelecionado', planoSelecionado)
                     <span className="text-gray-600">Período:</span>
                     <span className="font-medium text-gray-800">{planoSelecionado.periodoSelecionado.charAt(0).toUpperCase() + planoSelecionado.periodoSelecionado.slice(1)}</span>
                   </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-600">Valor Original:</span>
+                    <span className="font-medium text-gray-800 line-through">
+                      {`R$ ${planoSelecionado.preco.toFixed(2).replace('.', ',')}`}
+                    </span>
+                  </div>
+                  {discountAmount > 0 && (
+                    <div className="flex justify-between items-center text-green-600 font-bold">
+                      <span className="text-green-600">Desconto do Cupom:</span>
+                      <span className="text-lg">
+                        {`- R$ ${discountAmount.toFixed(2).replace('.', ',')}`}
+                      </span>
+                    </div>
+                  )}
                   <div className="border-t border-gray-200 pt-3">
                     <div className="flex justify-between items-center">
-                      <span className="text-lg font-bold text-gray-800">Total:</span>
-                      <span className="text-2xl font-bold text-green-600">{planoSelecionado.precoFormatado}</span>
+                      <span className="text-lg font-bold text-gray-800">Total a Pagar:</span>
+                      <span className="text-2xl font-bold text-green-600">
+                        {`R$ ${finalPrice.toFixed(2).replace('.', ',')}`}
+                      </span>
                     </div>
                   </div>
                 </div>
