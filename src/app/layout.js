@@ -39,7 +39,7 @@ export default function RootLayout({ children }) {
               </Head> */}
 
               <div className="absolute top-6 left-6 z-10">
-                <img src="/assets/mwmLogo.png" alt="Logo" className="w-24 h-auto" />
+                <Image src="/assets/mwmLogo.png" alt="Logo" className="w-24 h-auto" />
               </div>
 
               <div className="z-20 relative">
@@ -49,7 +49,7 @@ export default function RootLayout({ children }) {
               <NavbarWrapper />
 
               <div className="absolute inset-0 flex items-center justify-center z-0">
-                <img
+                <Image
                   src="/assets/mwmLogo.png"
                   alt="Logo Central"
                   className="w-96 h-auto opacity-20"

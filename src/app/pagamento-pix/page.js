@@ -548,7 +548,7 @@ const PagamentoPix = () => {
                 </h3>
 
                 <div className="text-center mb-4">
-                  <img
+                  <Image
                     src={`data:image/png;base64,${pixData.point_of_interaction.transaction_data.qr_code_base64}`}
                     alt="QR Code PIX"
                     className="mx-auto border border-gray-200 rounded-lg"
