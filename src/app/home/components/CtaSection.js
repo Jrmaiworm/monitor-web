@@ -12,7 +12,7 @@ const CtaSection = () => (
     </p>
     <div className="flex flex-col sm:flex-row justify-center gap-4">
       <a
-        href="/planos"
+        href="/planos-de-assinatura"
         className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg transition-colors duration-200"
       >
         Ver Planos

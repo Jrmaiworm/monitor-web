@@ -27,7 +27,7 @@ const SettingsCard = ({
   const handlePhoneChange = (e) => {
     setNotificacoes(prev => ({
       ...prev,
-      telefone_notificacao: e.target.value
+      numero_whatsapp: e.target.value
     }));
   };
 
@@ -174,12 +174,12 @@ const SettingsCard = ({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Telefone para Notificações (Opcional)</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Telefone para Notificações (Whatsap)</label>
               <input
                 type="text"
                 placeholder="+55 (DD) 9XXXX-XXXX"
                 className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                value={notificacoes.telefone_notificacao}
+                value={notificacoes.numero_whatsapp}
                 onChange={handlePhoneChange}
               />
             </div>
