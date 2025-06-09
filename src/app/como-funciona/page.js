@@ -185,7 +185,7 @@ const ComoFunciona = () => {
             Comece a monitorar seu site agora mesmo!
           </h2>
           <p className="text-lg text-blue-700 mb-6">
-            O plano básico é <span className="font-bold">TOTALMENTE GRATUITO</span>. Cadastre-se já e tenha todas as informações sobre o funcionamento do seu site.
+            Cadastre-se já e tenha todas as informações sobre o funcionamento do seu site.
           </p>
           <div className="flex flex-col sm:flex-row justify-center gap-4">
             <Link href="/crie-sua-conta" className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg transition-colors duration-200">

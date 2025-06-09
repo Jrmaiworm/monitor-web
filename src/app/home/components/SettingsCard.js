@@ -174,7 +174,7 @@ const SettingsCard = ({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Telefone para Notificações (Whatsap)</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Telefone para Notificações (Whatsapp)</label>
               <input
                 type="text"
                 placeholder="+55 (DD) 9XXXX-XXXX"
