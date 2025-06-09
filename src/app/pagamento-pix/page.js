@@ -9,6 +9,7 @@ import { useRouter } from 'next/navigation';
 import { FaArrowLeft, FaCheck, FaCrown, FaEnvelope, FaExclamationCircle, FaTimes, FaUser, FaCalendarAlt, FaCreditCard, FaCopy, FaTag } from 'react-icons/fa'; // Adicionado FaTag para o ícone do cupom
 
 import { usePayment } from '../contexts/PaymentContext';
+import Image from 'next/image';
 
 const PagamentoPix = () => {
   const router = useRouter();

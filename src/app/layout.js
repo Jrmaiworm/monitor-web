@@ -13,6 +13,7 @@ import { PaymentProvider } from "./contexts/PaymentContext"; // Ajuste o caminho
 
 // Importe o AuthProvider
 import { AuthProvider } from "./contexts/AuthContext"; // Certifique-se de que o caminho está correto
+import Image from "next/image";
 
 const inter = Inter({ subsets: ["latin"] });
 
