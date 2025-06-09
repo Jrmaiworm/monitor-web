@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
 import { FaArrowLeft, FaUser, FaEnvelope, FaPhone, FaCommentAlt, FaPaperPlane, FaCheck, FaExclamationCircle } from 'react-icons/fa';
+import api from '../../api/api';
 
 export default function FaleConosco() {
   const [formData, setFormData] = useState({
@@ -70,11 +71,21 @@ export default function FaleConosco() {
     setIsSubmitting(true);
     
     try {
-      // Aqui você implementaria a lógica para enviar o email
-      // Exemplo de simulação de envio:
-      await new Promise(resolve => setTimeout(resolve, 1500));
+    
+   
       
-      // Simulação de sucesso
+   
+      const response = await api.post('/contact', {
+      
+          nome: formData.nome,
+          email: formData.email,
+          telefone: formData.telefone,
+          assunto: formData.assunto || 'Contato do site',
+          mensagem: formData.mensagem,
+          destinatario: 'contato@mwmsoftware.com'
+        
+      });
+   // Simulação de sucesso
       setMensagemStatus({
         tipo: 'sucesso',
         texto: 'Mensagem enviada com sucesso! Entraremos em contato em breve.'
@@ -89,27 +100,6 @@ export default function FaleConosco() {
         mensagem: ''
       });
       
-      // Em um ambiente real, você faria uma requisição para seu backend:
-      /*
-      const response = await fetch('/api/enviar-email', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          nome: formData.nome,
-          email: formData.email,
-          telefone: formData.telefone,
-          assunto: formData.assunto || 'Contato do site',
-          mensagem: formData.mensagem,
-          destinatario: 'contato@mwmsoftware.com'
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Erro ao enviar mensagem');
-      }
-      */
       
     } catch (error) {
       console.error('Erro ao enviar mensagem:', error);
