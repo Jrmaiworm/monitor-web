@@ -4,16 +4,13 @@ import "./globals.css";
 import Footer from "./components/Footer";
 import NavbarWrapper from "./components/NavbarWrapper";
 import Header from "./components/Header";
-// Note: 'Head' de 'next/head' é para Pages Router. Para App Router, meta tags vão no 'layout.js' diretamente ou 'metadata' export.
-// Você pode remover a importação de Head se não estiver usando o Pages Router, e colocar as meta tags diretamente no 'metadata' export ou dentro de <head> no <html>
-// import Head from "next/head"; // Esta linha pode ser removida se não for usada para Pages Router
 
 // Importe o PaymentProvider
 import { PaymentProvider } from "./contexts/PaymentContext"; // Ajuste o caminho conforme a localização real do seu arquivo
 
 // Importe o AuthProvider
 import { AuthProvider } from "./contexts/AuthContext"; // Certifique-se de que o caminho está correto
-import Image from "next/image";
+import Image from "next/image"; // Componente Image do Next.js
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -40,7 +37,14 @@ export default function RootLayout({ children }) {
               </Head> */}
 
               <div className="absolute top-6 left-6 z-10">
-                <Image src="/assets/mwmLogo.png" alt="Logo" className="w-24 h-auto" />
+                {/* CORREÇÃO AQUI: Adicionado width e height */}
+                <Image
+                  src="/assets/mwmLogo.png"
+                  alt="Logo"
+                  width={96} // Exemplo: se w-24 é 96px, use 96. Ajuste para a largura real.
+                  height={48} // Exemplo: calcule a altura proporcional ou use a altura real do arquivo.
+                  className="w-24 h-auto"
+                />
               </div>
 
               <div className="z-20 relative">
@@ -50,9 +54,12 @@ export default function RootLayout({ children }) {
               <NavbarWrapper />
 
               <div className="absolute inset-0 flex items-center justify-center z-0">
+                {/* CORREÇÃO AQUI: Adicionado width e height */}
                 <Image
                   src="/assets/mwmLogo.png"
                   alt="Logo Central"
+                  width={384} // Exemplo: se w-96 é 384px, use 384. Ajuste para a largura real.
+                  height={192} // Exemplo: calcule a altura proporcional ou use a altura real do arquivo.
                   className="w-96 h-auto opacity-20"
                 />
               </div>

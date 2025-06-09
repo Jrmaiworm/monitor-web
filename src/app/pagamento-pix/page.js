@@ -544,10 +544,10 @@ const PagamentoPix = () => {
                                 </p>
                                 {/* Redirecionamento pode ser feito aqui ou com um setTimeout */}
                                 <button
-                                    onClick={() => router.push('/dashboard')}
+                                    onClick={() => router.push('/login')}
                                     className="mt-4 inline-block bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition duration-200"
                                 >
-                                    Ir para o Dashboard
+                                    Fazer Login
                                 </button>
                             </div>
                         )}
