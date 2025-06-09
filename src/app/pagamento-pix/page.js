@@ -1,15 +1,15 @@
 // PagamentoPix.js
 "use client";
 
-import React, { useState, useEffect, useCallback } from 'react'; // Adicionado useCallback
-import Head from 'next/head'; 
+import React, { useState, useEffect, useCallback } from 'react';
+import Head from 'next/head';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image'; // Correctly imported Image component
 
-import { FaArrowLeft, FaCheck, FaCrown, FaEnvelope, FaExclamationCircle, FaTimes, FaUser, FaCalendarAlt, FaCreditCard, FaCopy, FaTag } from 'react-icons/fa'; // Adicionado FaTag para o ícone do cupom
+import { FaArrowLeft, FaCheck, FaCrown, FaEnvelope, FaExclamationCircle, FaTimes, FaUser, FaCreditCard, FaCopy, FaTag } from 'react-icons/fa';
 
 import { usePayment } from '../contexts/PaymentContext';
-import Image from 'next/image';
 
 const PagamentoPix = () => {
   const router = useRouter();
@@ -25,7 +25,7 @@ const PagamentoPix = () => {
   });
 
   const [isGeneratingPix, setIsGeneratingPix] = useState(false);
-  const [pixData, setPixData] = useState(null); 
+  const [pixData, setPixData] = useState(null);
   const [error, setError] = useState('');
   const [pixCopied, setPixCopied] = useState(false);
 
@@ -51,7 +51,7 @@ const PagamentoPix = () => {
   const calculateFinalPrice = useCallback(() => {
     if (!planoSelecionado) return;
 
-    let price = planoSelecionado.valorFinal;
+    let price = planoSelecionado.valorFinal; // Use valorFinal for the initial price
     let currentDiscount = 0;
 
     if (appliedCoupon) {
@@ -74,9 +74,9 @@ const PagamentoPix = () => {
 
       setPlanoSelecionado({
         ...selectedPlanFromContext,
-        preco: selectedPlanFromContext.valorFinal // O valor numérico original do plano
+        preco: selectedPlanFromContext.valorFinal // Ensure 'preco' holds the numeric value
       });
-      
+
       setFormData(prev => ({
         ...prev,
         email: paymentData.userData.email || '',
@@ -113,16 +113,10 @@ const PagamentoPix = () => {
   };
 
   const validarFormulario = () => {
-    // ... (sua validação existente)
     if (!formData.first_name.trim()) {
       setError('Nome é obrigatório');
       return false;
     }
-
-    // if (!formData.last_name.trim()) { // Removido: last_name pode ser vazio se for só 1 nome
-    //   setError('Sobrenome é obrigatório');
-    //   return false;
-    // }
 
     if (!formData.email.trim()) {
       setError('Email é obrigatório');
@@ -134,7 +128,7 @@ const PagamentoPix = () => {
     }
 
     const documentoNumeros = formData.documento.replace(/\D/g, '');
-    if (documentoNumeros.length !== 11) { 
+    if (documentoNumeros.length !== 11) {
       setError('CPF deve ter 11 dígitos.'); // Assumindo apenas CPF neste formulário
       return false;
     }
@@ -148,7 +142,7 @@ const PagamentoPix = () => {
     setCouponError('');
     setAppliedCoupon(null); // Resetar cupom aplicado
     setDiscountAmount(0); // Resetar desconto
-    
+
     if (!couponCode.trim()) {
       setCouponError('Por favor, digite um código de cupom.');
       return;
@@ -206,7 +200,7 @@ const PagamentoPix = () => {
         description: `Pagamento ${planoSelecionado.nome} - ${planoSelecionado.periodoSelecionado.charAt(0).toUpperCase() + planoSelecionado.periodoSelecionado.slice(1)} - eYe Monitor`,
         transaction_amount: parseFloat(finalPrice.toFixed(2)), // Envia o preço final com desconto
         first_name: formData.first_name,
-        documento: formData.documento.replace(/\D/g, ''), 
+        documento: formData.documento.replace(/\D/g, ''),
         last_name: formData.last_name,
         tipo_plano: planoSelecionado.id,
         periodo: planoSelecionado.periodoSelecionado, // Pass the selected period
@@ -234,7 +228,7 @@ const PagamentoPix = () => {
         throw new Error(data.error || 'Erro ao gerar PIX');
       }
 
-      setPixData(data); 
+      setPixData(data);
 
     } catch (error) {
       console.error('Erro ao gerar PIX:', error);
@@ -262,7 +256,7 @@ const PagamentoPix = () => {
     <div className="bg-gray-50 min-h-screen">
       <Head>
         <title>Pagamento PIX | eYe Monitor</title>
-        <meta name="description" content="Finalize seu pagamento via PIX" />
+        <meta name="description" content="Finalize sua pagamento via PIX" />
       </Head>
 
       <div className="max-w-4xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
@@ -274,7 +268,7 @@ const PagamentoPix = () => {
 
         <div className="bg-gradient-to-r from-blue-600 to-blue-400 rounded-xl shadow-lg p-8 mb-8">
           <div className="text-center">
-            <FaCreditCard className="text-6xl text-white mx-auto mb-4" /> 
+            <FaCreditCard className="text-6xl text-white mx-auto mb-4" />
             <p className="text-4xl font-bold text-white mb-4">
               Pagamento via PIX
             </p>
@@ -302,7 +296,7 @@ const PagamentoPix = () => {
             <form onSubmit={handleGerarPix} className="space-y-6">
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label htmlFor="first_name" className="block text-sm font-medium text-gray-700 mb-1">
                     Nome *
                   </label>
                   <div className="relative">
@@ -310,9 +304,9 @@ const PagamentoPix = () => {
                       <FaUser className="text-gray-400" />
                     </div>
                     <input
-                    // Alterado para disabled para evitar edição se já vier do contexto
-                    disabled
+                      disabled
                       type="text"
+                      id="first_name"
                       name="first_name"
                       className="text-gray-700 w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg bg-gray-100 cursor-not-allowed"
                       placeholder="Seu nome"
@@ -322,9 +316,8 @@ const PagamentoPix = () => {
                     />
                   </div>
                 </div>
-                {/* Adicionado o campo de sobrenome */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label htmlFor="last_name" className="block text-sm font-medium text-gray-700 mb-1">
                     Sobrenome
                   </label>
                   <div className="relative">
@@ -334,6 +327,7 @@ const PagamentoPix = () => {
                     <input
                       disabled
                       type="text"
+                      id="last_name"
                       name="last_name"
                       className="text-gray-700 w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg bg-gray-100 cursor-not-allowed"
                       placeholder="Seu sobrenome"
@@ -345,7 +339,7 @@ const PagamentoPix = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
                   E-mail *
                 </label>
                 <div className="relative">
@@ -355,6 +349,7 @@ const PagamentoPix = () => {
                   <input
                     disabled
                     type="email"
+                    id="email"
                     name="email"
                     className="text-gray-700 w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg bg-gray-100 cursor-not-allowed"
                     placeholder="seu@email.com"
@@ -366,16 +361,17 @@ const PagamentoPix = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="documento" className="block text-sm font-medium text-gray-700 mb-1">
                   CPF *
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <FaCreditCard className="text-gray-400" /> 
+                    <FaCreditCard className="text-gray-400" />
                   </div>
                   <input
                     disabled
                     type="text"
+                    id="documento"
                     name="documento"
                     className="text-gray-700 w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg bg-gray-100 cursor-not-allowed"
                     placeholder="000.000.000-00"
@@ -389,7 +385,7 @@ const PagamentoPix = () => {
 
               {/* --- Campo de Cupom --- */}
               <div className="pt-4 border-t border-gray-200">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="coupon" className="block text-sm font-medium text-gray-700 mb-1">
                   Cupom de Desconto
                 </label>
                 <div className="flex gap-2">
@@ -399,6 +395,7 @@ const PagamentoPix = () => {
                     </div>
                     <input
                       type="text"
+                      id="coupon"
                       name="coupon"
                       className="text-gray-700 w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       placeholder="Insira seu cupom"
@@ -441,7 +438,9 @@ const PagamentoPix = () => {
                 </div>
                 {couponError && <p className="mt-2 text-sm text-red-600 flex items-center"><FaExclamationCircle className="mr-1" /> {couponError}</p>}
                 {appliedCoupon && !couponError && (
-                  <p className="mt-2 text-sm text-green-600 flex items-center"><FaCheck className="mr-1" /> Cupom "{appliedCoupon.type === 'percentage' ? `${appliedCoupon.value}%` : `R$ ${appliedCoupon.value.toFixed(2).replace('.', ',')}`} de desconto" aplicado!</p>
+                  <p className="mt-2 text-sm text-green-600 flex items-center">
+                    <FaCheck className="mr-1" /> Cupom &quot;{appliedCoupon.type === 'percentage' ? `${appliedCoupon.value}%` : `R$ ${appliedCoupon.value.toFixed(2).replace('.', ',')}`}&quot; de desconto aplicado!
+                  </p>
                 )}
               </div>
               {/* --- Fim do Campo de Cupom --- */}
@@ -462,7 +461,7 @@ const PagamentoPix = () => {
                     </>
                   ) : (
                     <>
-                      <FaCreditCard className="mr-2" /> 
+                      <FaCreditCard className="mr-2" />
                       Gerar PIX
                     </>
                   )}
@@ -544,7 +543,7 @@ const PagamentoPix = () => {
             {pixData?.point_of_interaction?.transaction_data?.qr_code_base64 && pixData.point_of_interaction.transaction_data.qr_code && (
               <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6">
                 <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center">
-                  <FaCreditCard className="text-green-500 mr-2" /> 
+                  <FaCreditCard className="text-green-500 mr-2" />
                   PIX Gerado
                 </h3>
 
@@ -552,17 +551,20 @@ const PagamentoPix = () => {
                   <Image
                     src={`data:image/png;base64,${pixData.point_of_interaction.transaction_data.qr_code_base64}`}
                     alt="QR Code PIX"
+                    width={200} // Add appropriate width
+                    height={200} // Add appropriate height
                     className="mx-auto border border-gray-200 rounded-lg"
                   />
                 </div>
 
                 <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label htmlFor="pixCode" className="block text-sm font-medium text-gray-700 mb-2">
                     Código PIX (Copia e Cola):
                   </label>
                   <div className="flex gap-2">
                     <input
                       type="text"
+                      id="pixCode"
                       value={pixData.point_of_interaction.transaction_data.qr_code}
                       readOnly
                       className="flex-1 text-gray-700 px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-sm"
@@ -588,10 +590,10 @@ const PagamentoPix = () => {
                     <strong>Instruções:</strong>
                   </p>
                   <ul className="text-sm text-blue-700 mt-2 space-y-1">
-                    <li>• Abra o app do seu banco</li>
-                    <li>• Escaneie o QR Code ou cole o código PIX</li>
-                    <li>• Confirme o pagamento</li>
-                    <li>• Sua assinatura será ativada automaticamente</li>
+                    <li>&bull; Abra o app do seu banco</li>
+                    <li>&bull; Escaneie o QR Code ou cole o código PIX</li>
+                    <li>&bull; Confirme o pagamento</li>
+                    <li>&bull; Sua assinatura será ativada automaticamente</li>
                   </ul>
                 </div>
               </div>
