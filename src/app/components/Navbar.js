@@ -84,12 +84,12 @@ const NavBar = () => {
                   icon={<FaTag />} 
                   active={isActive('/planos-de-assinatura')} 
                 />
-                <NavDesktopItem 
+                {/* <NavDesktopItem 
                   href="/verificacao-rapida" 
                   label="VERIFICAÇÃO RÁPIDA" 
                   icon={<FaSearch />} 
                   active={isActive('/verificacao-rapida')} 
-                />
+                /> */}
               </>
             )}
             
@@ -178,12 +178,12 @@ const NavBar = () => {
                   icon={<FaTag />} 
                   active={isActive('/planos-de-assinatura')} 
                 />
-                <NavMobileItem 
+                {/* <NavMobileItem 
                   href="/verificacao-rapida" 
                   label="VERIFICAÇÃO RÁPIDA" 
                   icon={<FaSearch />} 
                   active={isActive('/verificacao-rapida')} 
-                />
+                /> */}
                 <div className="pt-4 pb-3 border-t border-gray-200">
                   <NavMobileItem 
                     href="/login" 
