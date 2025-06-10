@@ -1,8 +1,7 @@
-// components/MonitoredUrlsList.js
 import React from 'react';
 import { 
   FaChartLine, FaClock, FaPlay, FaStop, FaTrashAlt, FaInfoCircle,
-  FaBell, FaEnvelopeOpenText, FaTimesCircle, // Ícones para notificação e desativado
+  FaBell, FaEnvelopeOpenText, FaTimesCircle,
   FaGlobe
 } from 'react-icons/fa';
 
@@ -14,7 +13,26 @@ const MonitoredUrlsList = ({
   handleMonitoramento,
   showDeleteConfirmation,
   fetchDetalhesMonitoramento,
+  usuario, // RECEIVE THE NEW PROP
 }) => {
+
+  // Function to get allowed intervals based on user plan
+  const getAllowedIntervals = (plan) => {
+    switch (plan) {
+      case "BASICO":
+        return [30]; // Only 30 minutes
+      case "AVANCADO":
+        return [5, 15, 30]; // 5, 15, or 30 minutes
+      case "SUPER":
+        return [1, 5, 15, 30]; // 1, 5, 15, or 30 minutes
+      default:
+        return [30]; // Default for unknown plans, or adjust as needed
+    }
+  };
+
+  const userPlan = usuario?.plano;
+  const allowedIntervals = getAllowedIntervals(userPlan);
+
   return (
     <div className="bg-white rounded-lg shadow-md overflow-hidden border border-gray-200 mb-8">
       <div className="border-b border-gray-200 bg-gray-50 px-6 py-4 flex justify-between items-center">
@@ -23,8 +41,7 @@ const MonitoredUrlsList = ({
         </h2>
         <span className="text-sm text-gray-500">{urls.length} sites</span>
       </div>
-      
-      {/* NOVO: Legenda dos ícones de notificação */}
+
       <div className="p-4 bg-gray-50 border-b border-gray-100 text-sm text-gray-600 flex flex-wrap gap-x-4 gap-y-2 justify-center sm:justify-start">
         <span className="flex items-center">
           <FaBell className="text-yellow-500 mr-1" /> Notificação de Falhas
@@ -58,12 +75,12 @@ const MonitoredUrlsList = ({
                   </div>
                   <div className="flex items-center mt-1 text-sm text-gray-500">
                     <FaClock className="mr-1" />
+                    {/* Display current interval */}
                     <span>Intervalo: {monitor.intervalo_minutos || 1} min</span>
                     <span className="ml-4 px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100">
                       {monitor.monitorando ? "Monitorando" : "Parado"}
                     </span>
                   </div>
-                  {/* NOVO: Ícones de status de notificação */}
                   <div className="flex items-center mt-2 space-x-2 text-sm text-gray-600">
                     {monitor.falhas ? (
                       <span title="Notificação de Falhas Ativa" className="flex items-center text-yellow-600">
@@ -84,15 +101,32 @@ const MonitoredUrlsList = ({
                 </div>
                 <div className="flex items-center space-x-4">
                   <div className="flex items-center border rounded-lg overflow-hidden">
-                    <input
-                      type="number"
-                      min="1"
-                      className="w-16 py-1 px-2 text-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                      value={intervalos[monitor.id] || 1}
-                      onChange={(e) =>
-                        handleIntervalChange(monitor.id, e.target.value)
-                      }
-                    />
+                    {userPlan === "BASICO" ? (
+                      // Basic plan: fixed 30 min
+                      <input
+                        type="text"
+                        className="w-16 py-1 px-2 text-gray-700 bg-gray-100 cursor-not-allowed"
+                        value="30"
+                        readOnly
+                        disabled
+                        title="O plano Básico tem um intervalo fixo de 30 minutos."
+                      />
+                    ) : (
+                      // Advanced and Super plans: dropdown selection
+                      <select
+                        className="w-20 py-1 px-2 text-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        value={intervalos[monitor.id] || allowedIntervals[0]} // Set initial value, default to first allowed
+                        onChange={(e) =>
+                          handleIntervalChange(monitor.id, parseInt(e.target.value, 10))
+                        }
+                      >
+                        {allowedIntervals.map((interval) => (
+                          <option key={interval} value={interval}>
+                            {interval}
+                          </option>
+                        ))}
+                      </select>
+                    )}
                     <span className="bg-gray-100 px-2 py-1 text-sm text-gray-600">
                       min
                     </span>

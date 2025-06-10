@@ -415,7 +415,7 @@ const Home = () => {
       setMensagem("ID do usuário não disponível para buscar o relatório geral.");
     }
   };
-console.log('usuario',usuario)
+
   return (
     <div className="bg-gray-50 min-h-screen">
       <Head>
@@ -438,7 +438,7 @@ console.log('usuario',usuario)
             usuario={usuario}
             limiteUrls={limiteUrls}
             urls={urls}
-            onShowGeneralReport={handleShowGeneralReport} // Pass the new handler
+            onShowGeneralReport={handleShowGeneralReport}
           />
           <SettingsCard
             notificacoes={notificacoes}
@@ -463,6 +463,7 @@ console.log('usuario',usuario)
           handleMonitoramento={handleMonitoramento}
           showDeleteConfirmation={showDeleteConfirmation}
           fetchDetalhesMonitoramento={fetchDetalhesMonitoramento}
+          usuario={usuario} // ADD THIS LINE
         />
 
         <CtaSection />
@@ -481,11 +482,10 @@ console.log('usuario',usuario)
         urlSelecionada={urlSelecionada}
         detalhesMonitoramento={detalhesMonitoramento}
         historicoOffline={historicoOffline}
-        uptimeSummaryData={uptimeSummaryData} // PASSA OS NOVOS DADOS
-        userId={usuario?.id} // PASSA O ID DO USUÁRIO
+        uptimeSummaryData={uptimeSummaryData}
+        userId={usuario?.id}
       />
 
-      {/* NEW: General Report Modal */}
       <GeneralReportModal
         isVisible={showGeneralReportModal}
         onClose={() => setShowGeneralReportModal(false)}

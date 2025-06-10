@@ -92,7 +92,7 @@ const ComoFunciona = () => {
               <div className="ml-4">
                 <h3 className="text-lg font-medium text-gray-900">Alertas Instantâneos</h3>
                 <p className="mt-2 text-gray-600">
-                  Caso seu site não esteja disponível, um email de alerta é enviado imediatamente para você.
+                  Caso seu site não esteja disponível, um email de alerta e uma notificação via whatsapp é enviado imediatamente para você.
                   Você também receberá outro alerta quando o serviço voltar ao normal.
                 </p>
               </div>

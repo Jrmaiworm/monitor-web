@@ -16,12 +16,12 @@ export default function Inicio() {
             </h1>
             
             <p className="mb-6 text-white opacity-90">
-              O eYe Monitor verifica se o seu site web está no ar, enviando e-mail para alertá-lo em caso de falha ou de retorno do serviço e gerando relatórios de desempenho.
+              O eYe Monitor verifica se o seu site web está no ar, enviando e-mail e notificação via whatsapp para alertá-lo em caso de falha ou de retorno do serviço e gerando relatórios de desempenho.
             </p>
             
             <p className="text-lg text-white opacity-90 mb-8 max-w-3xl mx-auto">
               Monitore a disponibilidade dos seus sites <strong>24 horas por dia, 7 dias por semana, 365 dias por ano</strong>. 
-              E o plano básico é <strong>GRÁTIS</strong>!
+           
             </p>
           </div>
         </div>

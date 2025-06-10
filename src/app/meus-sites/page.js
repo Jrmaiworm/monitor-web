@@ -165,7 +165,7 @@ const URL ="https://biomob-api.com:3202/monitor-status/"
               </div>
               <h3 className="text-lg font-semibold text-gray-800 mb-2">Alertas por E-mail</h3>
               <p className="text-gray-600">
-                Receba e-mails de alerta em caso de falha ou quando o serviço voltar ao normal, permitindo que você esteja sempre informado.
+                Receba e-mails de alerta e notificações via whatsapp em caso de falha ou quando o serviço voltar ao normal, permitindo que você esteja sempre informado.
               </p>
             </div>
           </div>
