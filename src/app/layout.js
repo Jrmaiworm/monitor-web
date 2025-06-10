@@ -76,6 +76,9 @@ export const metadata = {
     shortcut: "/favicon-16x16.png", // Favicon para atalho (opcional)
     apple: "/apple-touch-icon.png", // Favicon para iOS (opcional)
   },
+    verification: {
+    google: 'google7531929f924b50c0', // SEU CÓDIGO DE VERIFICAÇÃO AQUI
+  },
 };
 // --- FIM DOS METADADOS OTIMIZADOS E ATUALIZADOS ---
 
