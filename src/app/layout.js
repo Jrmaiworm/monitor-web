@@ -36,7 +36,7 @@ export const metadata = {
     "MWM Software", // Adicionado "MWM Software"
   ],
   // 4. Canonical URL (ajuda a evitar conteúdo duplicado, importante para o domínio principal)
-  metadataBase: new URL('https://www.eyemonitor.com.br'), // **SUBSTITUA PELO SEU DOMÍNIO REAL**
+  metadataBase: new URL('https://www.eyemonitor.online'), // **SUBSTITUA PELO SEU DOMÍNIO REAL**
   alternates: {
     canonical: '/', // Define a raiz do seu site como a URL canônica padrão
   },
@@ -57,11 +57,11 @@ export const metadata = {
   openGraph: {
     title: "eYe Monitor | Monitoramento de Sites 24h e Uptime",
     description: "Monitore o uptime dos seus sites e servidores 24 horas por dia. Receba alertas instantâneos de falhas por e-mail e WhatsApp. Mantenha seu negócio online e estável com eYe Monitor, uma criação da MWM Software.",
-    url: "https://www.eyemonitor.com.br", // **SUBSTITUA PELA URL BASE DO SEU SITE**
+    url: "https://www.eyemonitor.online", // **SUBSTITUA PELA URL BASE DO SEU SITE**
     siteName: "eYe Monitor",
     images: [
       {
-        url: "https://www.eyemonitor.com.br/assets/og-image.jpg", // **SUBSTITUA PELA URL DE UMA IMAGEM DE DESTAQUE (1200x630 pixels)**
+        url: "https://www.eyemonitor.com.br/assets/mwmLogo.png", // **SUBSTITUA PELA URL DE UMA IMAGEM DE DESTAQUE (1200x630 pixels)**
         width: 1200,
         height: 630,
         alt: "eYe Monitor - Monitoramento de Sites 24 horas por MWM Software",
