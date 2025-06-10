@@ -17,7 +17,7 @@ const ComoFunciona = () => {
         </div>
 
         {/* Serviços de monitoramento */}
-        <div className="bg-white shadow-md rounded-lg p-8 mb-8">
+        {/* <div className="bg-white shadow-md rounded-lg p-8 mb-8">
           <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
             <FaServer className="text-blue-600 mr-2" /> Serviços Monitorados
           </h2>
@@ -59,7 +59,7 @@ const ComoFunciona = () => {
               </p>
             </div>
           </div>
-        </div>
+        </div> */}
 
         {/* Como Funciona o Monitoramento */}
         <div className="bg-white shadow-md rounded-lg p-8 mb-8">
