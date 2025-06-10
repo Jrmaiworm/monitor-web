@@ -61,7 +61,7 @@ export const metadata = {
     siteName: "eYe Monitor",
     images: [
       {
-        url: "https://www.eyemonitor.com.br/assets/mwmLogo.png", // **SUBSTITUA PELA URL DE UMA IMAGEM DE DESTAQUE (1200x630 pixels)**
+        url: "https://www.eyemonitor.online/assets/monitor.png", // **SUBSTITUA PELA URL DE UMA IMAGEM DE DESTAQUE (1200x630 pixels)**
         width: 1200,
         height: 630,
         alt: "eYe Monitor - Monitoramento de Sites 24 horas por MWM Software",
