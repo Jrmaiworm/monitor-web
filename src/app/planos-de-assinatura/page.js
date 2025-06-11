@@ -38,7 +38,7 @@ const PlanosAssinatura = () => {
       recursos: [
         'Até 5 sites monitorados',
         'Verificação a cada 30 minutos',
-        'Alertas por email',
+        'Alertas por email e whatsapp',
         'Dashboard básico',
         'Suporte por email'
       ],
@@ -56,7 +56,7 @@ const PlanosAssinatura = () => {
       recursos: [
         'Até 10 sites monitorados',
         'Verificação a cada 5 minutos',
-        'Alertas por email e SMS',
+        'Alertas por email e whatsapp',
         'Dashboard avançado',
         'Relatórios detalhados',
         'Suporte prioritário'
@@ -75,7 +75,7 @@ const PlanosAssinatura = () => {
       recursos: [
         'Até 20 sites monitorados',
         'Verificação a cada 1 minuto',
-        'Alertas multi-canal',
+         'Alertas por email e whatsapp',
         'Dashboard personalizado',
         'API completa',
         'Suporte 24/7',
